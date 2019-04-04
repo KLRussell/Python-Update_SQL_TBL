@@ -138,35 +138,35 @@ class SQLConnect:
 
 
 def conn_chk():
-    if 'Server' in sfile.keys() and 'Database' in sfile.keys():
+    if 'Server' in settings.keys() and 'Database' in settings.keys():
         asql = SQLConnect('alch')
+        asql.connect()
         engine = asql.grabengine()
-
         try:
-            obj = engine.execute(mysql.text("SELECT VERSION()"))
+            obj = engine.execute(mysql.text("SELECT 1 from sys.sysprocesses"))
 
             if obj._saved_cursor.arraysize > 0:
-                engine.close()
+                engine.dispose()
                 return True
             else:
-                engine.close()
-                del sfile['Server']
-                del sfile['Database']
+                engine.dispose()
+                del settings['Server']
+                del settings['Database']
                 return False
 
         except:
-            engine.close()
-            del sfile['Server']
-            del sfile['Database']
+            engine.dispose()
+            del settings['Server']
+            del settings['Database']
             return False
     else:
         return False
 
 
 def check_setting(setting_name):
-    if setting_name not in sfile.keys():
+    if setting_name not in settings.keys():
         print("Please type {} name:".format(setting_name))
-        sfile[setting_name] = input()
+        settings[setting_name] = input()
 
 
 def init():
@@ -196,8 +196,12 @@ def write_log(message, action='info'):
 
 settings = dict()
 if os.environ['PYTHONPATH']:
-    settings['PythonPath'] = os.environ['PYTHONPATH'].split(';')[0]
-else:
+    for path in os.getenv('PYTHONPATH').split(os.pathsep):
+        if not path == os.path.dirname(os.path.abspath(__file__)):
+            settings['PythonPath'] = path
+            break
+
+if not settings['PythonPath']:
     settings['PythonPath'] = ''
 
 settings['ErrPath'] = os.path.join(settings['PythonPath'], '02_Error')
@@ -214,10 +218,14 @@ sfile = shelve.open(os.path.join(settings['PythonPath'], 'Settings'))
 
 type(sfile)
 
-while not conn_chk:
+for k, v in sfile.items():
+    settings[k] = v
+
+while not conn_chk():
     check_setting("Server")
     check_setting("Database")
 
-settings = copy.copy(sfile)
+for k, v in settings.items():
+    sfile[k] = v
 
 sfile.close()
