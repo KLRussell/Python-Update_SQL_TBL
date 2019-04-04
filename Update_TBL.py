@@ -1,10 +1,8 @@
 from Conn import SQLConnect
-from Conn import settings
+from Conn import write_log
 
 import pandas as pd
 import pathlib as pl
-import datetime
-import logging
 import os
 
 ProcPath = os.path.join(os.path.abspath(__file__), '01_To_Process')
@@ -81,29 +79,8 @@ class ExcelToSQL:
 
     def append_errors(self, table, df, errmsg):
         if not df.empty:
-            self.write_log('{} Error(s) found. Appending to virtual list'.format(len(df.index)), 'warning')
+            write_log('{} Error(s) found. Appending to virtual list'.format(len(df.index)), 'warning')
             self.errors.append([table, df, errmsg])
-
-    @staticmethod
-    def write_log(message, action='info'):
-        filepath = os.path.join(settings['EventLogDir'],
-                                "{} Event_Log.txt".format(datetime.datetime.now().__format__("%Y%m%d")))
-
-        logging.basicConfig(filename=filepath,
-                            level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
-
-        print('{0} - {1} - {2}'.format(datetime.datetime.now(), action.upper(), message))
-
-        if action == 'debug':
-            logging.debug(message)
-        elif action == 'info':
-            logging.info(message)
-        elif action == 'warning':
-            logging.warning(message)
-        elif action == 'error':
-            logging.error(message)
-        elif action == 'critical':
-            logging.critical(message)
 
 
 if __name__ == '__main__':
