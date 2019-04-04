@@ -361,7 +361,7 @@ class ExcelToSQL:
             self.errors.append([table, copy.copy(err), errmsg])
             df.drop(err.index, inplace=True)
     
-    def process_errs(, data):
+    def process_errs(self, data):
         print('processing errors')
 
     def close_sql(self):
