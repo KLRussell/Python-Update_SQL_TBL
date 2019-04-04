@@ -175,7 +175,78 @@ class ExcelToSQL:
                     if len(data) < 1:
                         return False
                 elif row['Data_Type'][0] in ['money', 'smallmoney', 'numeric', 'decimal', 'float', 'real']:
-                    print('hi')
+                    cleaned_df = pd.DataFrame()
+                    cleaned_df[col] = data[col].map(lambda x: True if str(x).isnumeric() else False)
+                    myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
+
+                    self.append_errors(table, myerr,
+                                       'Column {0} has {1} items that is not numeric for data type {2}'
+                                       .format(col, len(myerr), row['Data_Type'][0]))
+
+                    if len(data) < 1:
+                        return False
+
+                    if row['Data_Type'][0] == 'money':
+                        minnum = -922337203685477.5808
+                        maxnum = 922337203685477.5807
+                    elif row['Data_Type'][0] == 'smallmoney':
+                        minnum = -214748.3648
+                        maxnum = 214748.3647
+                    elif row['Data_Type'][0] in ['decimal', 'numeric']:
+                        minnum = -10 ** 38 + 1
+                        maxnum = 10 ** 38 - 1
+
+                    if row['Data_Type'][0] in ['money', 'smallmoney', 'decimal', 'numeric']:
+                        cleaned_df = pd.DataFrame()
+                        cleaned_df[col] = data[col].map(
+                            lambda x: True if x < minnum else False)
+                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
+
+                        self.append_errors(table, myerr,
+                                           'Column {0} has {1} items that exceeds the minumum number size for data type {2}'
+                                           .format(col, len(myerr), row['Data_Type'][0]))
+
+                        if len(data) < 1:
+                            return False
+
+                        cleaned_df = pd.DataFrame()
+                        cleaned_df[col] = data[col].map(
+                            lambda x: True if x > maxnum else False)
+                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
+
+                        self.append_errors(table, myerr,
+                                           'Column {0} has {1} items that exceeds the maximum number size for data type {2}'
+                                           .format(col, len(myerr), row['Data_Type'][0]))
+
+                        if len(data) < 1:
+                            return False
+
+                    cleaned_df = pd.DataFrame()
+                    cleaned_df[col] = data[col].map(
+                        lambda x: True if ('.' in str(x) and len(str(x).split('.')[0]) >
+                                           row['Numeric_Precision'][0]) or ('.' not in str(x) and len(str(x)) >
+                                                                            row['Numeric_Precision'][0]) else False)
+                    myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
+
+                    self.append_errors(table, myerr,
+                                       'Column {0} has {1} items that exceeds the numeric precision for data type {2}'
+                                       .format(col, len(myerr), row['Data_Type'][0]))
+
+                    if len(data) < 1:
+                        return False
+
+                    cleaned_df = pd.DataFrame()
+                    cleaned_df[col] = data[col].map(
+                        lambda x: True if ('.' in str(x) and len(str(x).split('.')[1]) >
+                                           row['Numeric_Scale'][0]) or '.' not in str(x) else False)
+                    myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
+
+                    self.append_errors(table, myerr,
+                                       'Column {0} has {1} items that exceeds the numeric scale for data type {2}'
+                                       .format(col, len(myerr), row['Data_Type'][0]))
+
+                    if len(data) < 1:
+                        return False
         else:
             self.append_errors(table, data, 'Unable to find table {} in INFORMATION_SCHEMA.COLUMNS table'
                                .format(table))
@@ -207,7 +278,7 @@ class ExcelToSQL:
         if not results.empty:
             for pk in results['COLUMN_NAME'].tolist():
                 if pk in data.columns.tolist():
-                    if self.primary_key:
+                    if not self.primary_key:
                         self.primary_key = pk
                     else:
                         self.append_errors\
