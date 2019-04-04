@@ -174,7 +174,7 @@ def init():
 
 
 def write_log(message, action='info'):
-    filepath = os.path.join(settings['EventLogDir'],
+    filepath = os.path.join(settings['EventPath'],
                             "{} Event_Log.txt".format(datetime.datetime.now().__format__("%Y%m%d")))
 
     logging.basicConfig(filename=filepath,

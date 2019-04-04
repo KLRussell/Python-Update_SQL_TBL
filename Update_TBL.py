@@ -5,6 +5,7 @@ import pandas as pd
 import pathlib as pl
 import os
 import copy
+import numpy as np
 
 ProcPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), '01_To_Process')
 
@@ -14,7 +15,8 @@ class ExcelToSQL:
     primary_key = None
 
     def __init__(self):
-        self.asql = SQLConnect('alch').conn()
+        self.asql = SQLConnect('alch')
+        self.asql.connect()
 
     def validate_tab(self, table, data):
         splittable = table.split('.')
@@ -62,96 +64,118 @@ class ExcelToSQL:
 
         if not results.empty:
             for col in data.columns.tolist():
-                row = results.loc[results['Column_Name'] == col]
+                row = results.loc[results['Column_Name'] == col].reset_index()
 
                 if row.empty:
                     self.append_errors(table, data, 'Column {0} does not exist in {1}'
                                        .format(col, table))
                     return False
-                elif row['Data_Type'] in ['xml', 'text', 'varchar', 'nvarchar', 'uniqueidentifier', 'nchar'
-                    , 'geography', 'char', 'ntext'] and row['Character_Maximum_Length'] > 0:
-                    myerr = data.loc[len(data[col]) > row['Character_Maximum_Length']]
+                elif row['Data_Type'][0] in \
+                        ['xml', 'text', 'varchar', 'nvarchar', 'uniqueidentifier', 'nchar', 'geography', 'char', 'ntext']\
+                        and str(row['Character_Maximum_Length'][0]).isnumeric():
+                    cleaned_df = pd.DataFrame()
+                    cleaned_df[col] = data[col].map(
+                        lambda x: True if len(str(x)) > row['Character_Maximum_Length'][0] else False)
+                    myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
                     self.append_errors(table, myerr,
                                        'Column {0} has {1} items that exceeds the limit percision for data type {2}'
-                                       .format(col, len(myerr), row['Data_Type']))
+                                       .format(col, len(myerr), row['Data_Type'][0]))
 
                     if len(data) < 1:
                         return False
-                elif row['Data_Type'] in ['varbinary', 'binary', 'bit', 'int', 'tinyint', 'smallint', 'bigint']:
-                    myerr = data.loc[not data[col].str.isnumeric()]
+                elif row['Data_Type'][0] in ['varbinary', 'binary', 'bit', 'int', 'tinyint', 'smallint', 'bigint']:
+                    cleaned_df = pd.DataFrame()
+                    cleaned_df[col] = data[col].map(lambda x: True if str(x).isnumeric() else False)
+                    myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
+
                     self.append_errors(table, myerr,
                                        'Column {0} has {1} items that is not numeric for data type {2}'
-                                       .format(col, len(myerr), row['Data_Type']))
+                                       .format(col, len(myerr), row['Data_Type'][0]))
 
                     if len(data) < 1:
                         return False
 
-                    myerr = data.loc[data[col].str.isdigit()]
+                    cleaned_df = pd.DataFrame()
+                    cleaned_df[col] = data[col].map(lambda x: True if str(x).isdigit() else False)
+                    myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
+
                     self.append_errors(table, myerr,
                                        'Column {0} has {1} items that has digits for data type {2}'
-                                       .format(col, len(myerr), row['Data_Type']))
+                                       .format(col, len(myerr), row['Data_Type'][0]))
 
                     if len(data) < 1:
                         return False
 
-                    if row['Data_Type'] in ['varbinary', 'binary']:
+                    if row['Data_Type'][0] in ['varbinary', 'binary']:
                         minnum = 1
                         maxnum = 8000
-                    elif row['Data_Type'] == 'bit':
+                    elif row['Data_Type'][0] == 'bit':
                         minnum = 0
                         maxnum = 1
-                    elif row['Data_Type'] == 'tinyint':
+                    elif row['Data_Type'][0] == 'tinyint':
                         minnum = 0
                         maxnum = 255
-                    elif row['Data_Type'] == 'smallint':
+                    elif row['Data_Type'][0] == 'smallint':
                         minnum = -32768
                         maxnum = 32767
-                    elif row['Data_Type'] == 'int':
+                    elif row['Data_Type'][0] == 'int':
                         minnum = -2147483648
                         maxnum = 2147483647
-                    elif row['Data_Type'] == 'bigint':
+                    elif row['Data_Type'][0] == 'bigint':
                         minnum = -9223372036854775808
                         maxnum = 9223372036854775807
                     else:
                         minnum = 0
                         maxnum = 0
 
-                    if row['Character_Maximum_Length'] > 0:
-                        myerr = data.loc[len(data[col]) > row['Character_Maximum_Length']]
-                    else:
-                        myerr = data.loc[len(data[col]) < minnum]
+                    cleaned_df = pd.DataFrame()
+                    cleaned_df[col] = data[col].map(
+                        lambda x: True if x < minnum else False)
+                    myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
                     self.append_errors(table, myerr,
-                                       'Column {0} has {1} items that exceeds the minumum limit percision for data type {2}'
-                                       .format(col, len(myerr), row['Data_Type']))
+                                       'Column {0} has {1} items that exceeds the minumum number size for data type {2}'
+                                       .format(col, len(myerr), row['Data_Type'][0]))
 
                     if len(data) < 1:
                         return False
 
-                    if row['Character_Maximum_Length'] > 0:
-                        myerr = data.loc[len(data[col]) > row['Character_Maximum_Length']]
-                    else:
-                        myerr = data.loc[len(data[col]) > maxnum]
+                    cleaned_df = pd.DataFrame()
+                    cleaned_df[col] = data[col].map(
+                        lambda x: True if x > maxnum else False)
+                    myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
                     self.append_errors(table, myerr,
-                                       'Column {0} has {1} items that exceeds the maximum limit percision for data type {2}'
-                                       .format(col, len(myerr), row['Data_Type']))
+                                       'Column {0} has {1} items that exceeds the maximum number size for data type {2}'
+                                       .format(col, len(myerr), row['Data_Type'][0]))
 
                     if len(data) < 1:
                         return False
-                elif row['Data_Type'] in ['smalldatetime', 'date', 'datetime', 'datetime2', 'time']:
+
+                    cleaned_df = pd.DataFrame()
+                    cleaned_df[col] = data[col].map(
+                        lambda x: True if len(str(x)) > row['Character_Maximum_Length'][0] else False)
+                    myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
+
+                    self.append_errors(table, myerr,
+                                       'Column {0} has {1} items that exceeds the precision size for data type {2}'
+                                       .format(col, len(myerr), row['Data_Type'][0]))
+
+                    if len(data) < 1:
+                        return False
+                elif row['Data_Type'][0] in ['smalldatetime', 'date', 'datetime', 'datetime2', 'time']:
                     cleaned_df = pd.DataFrame()
                     cleaned_df['Date'] = pd.to_datetime(data[col], errors='coerce')
-                    myerr = data.loc[cleaned_df.loc[cleaned_df['Date'].isnull()].index]
+                    myerr = data.loc[cleaned_df.loc[cleaned_df['Date'].isnull()].index].reset_index()
 
                     self.append_errors(table, myerr,
                                        'Column {0} has {1} items that isn''t in date/time format for data type {2}'
-                                       .format(col, len(myerr), row['Data_Type']))
+                                       .format(col, len(myerr), row['Data_Type'][0]))
 
                     if len(data) < 1:
                         return False
-                elif row['Data_Type'] in ['money', 'smallmoney', 'numeric', 'decimal', 'float', 'real']:
+                elif row['Data_Type'][0] in ['money', 'smallmoney', 'numeric', 'decimal', 'float', 'real']:
                     print('hi')
         else:
             self.append_errors(table, data, 'Unable to find table {} in INFORMATION_SCHEMA.COLUMNS table'
@@ -182,7 +206,7 @@ class ExcelToSQL:
         '''.format(table.split('.')[0], table.split('.')[1]))
 
         if not results.empty:
-            for pk in results['Column_Name']:
+            for pk in results['COLUMN_NAME'].tolist():
                 if pk in data.columns.tolist():
                     if self.primary_key:
                         self.primary_key = pk
