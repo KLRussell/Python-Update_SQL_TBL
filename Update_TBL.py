@@ -331,15 +331,38 @@ class ExcelToSQL:
                                .format(self.primary_key, len(myerr), table))
 
         if not data.empty:
-            print('success')
-        else:
-            print('error')
+            self.asql.execute('''
+                update B
+                set
+                    {0}
+                
+                from UT_TMP As A
+                left join {1} As B
+                on
+                    A.{2} = B.{2}
+            '''.format(self.format_sql_set(data.columns.tolist()), table, self.primary_key))
+
+        self.asql.execute('drop table UT_TMP')
+
+    def format_sql_set(self, cols):
+        myreturn = None
+        for col in cols:
+            if not col == self.primary_key:
+                if myreturn:
+                    myreturn = '{0}, B.{1} = A.{1}'.format(myreturn, col)
+                else:
+                    myreturn = 'B.{0} = A.{0}'.format(col)
+
+        return myreturn
 
     def append_errors(self, table, err, df, errmsg):
         if not err.empty:
             write_log('{} Error(s) found. Appending to virtual list'.format(len(err.index)), 'warning')
             self.errors.append([table, copy.copy(err), errmsg])
             df.drop(err.index, inplace=True)
+    
+    def process_errs(, data):
+        print('processing errors')
 
     def close_sql(self):
         self.asql.close()
@@ -362,6 +385,7 @@ if __name__ == '__main__':
 
             if myobj.validate_tab(table, data) and myobj.validate_data(table, data):
                 myobj.update_tbl(table, data)
+                myobj.process_errs(data)
 
     myobj.close_sql()
 
