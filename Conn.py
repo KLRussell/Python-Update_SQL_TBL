@@ -6,6 +6,8 @@ import pandas as pd
 import sqlalchemy as mysql
 import shelve
 import pyodbc
+import copy
+import os
 
 
 class SQLConnect:
@@ -19,10 +21,10 @@ class SQLConnect:
 
         if conn_type == 'alch':
             self.connstring = self.alchconnstr(
-                '{SQL Server Native Client 11.0}', 1433, sfile['Server'], sfile['Database'], 'mssql'
+                '{SQL Server Native Client 11.0}', 1433, settings['Server'], settings['Database'], 'mssql'
                 )
         elif conn_type == 'sql':
-            self.connstring = self.sqlconnstr(sfile['Server'], sfile['Database'])
+            self.connstring = self.sqlconnstr(settings['Server'], settings['Database'])
         elif conn_type == 'dsn':
             self.connstring = self.dsnconnstr(dsn)
 
@@ -165,12 +167,34 @@ def check_setting(setting_name):
         sfile[setting_name] = input()
 
 
-sfile = shelve.open('Settings')
+def init():
+    global settings
+
+
+settings = dict()
+if os.environ['PYTHONPATH']:
+    settings['PythonPath'] = os.environ['PYTHONPATH'].split(';')[0]
+else:
+    settings['PythonPath'] = ''
+
+settings['ErrPath'] = os.path.join(settings['PythonPath'], '02_Error')
+
+if not os.path.exists(settings['ErrPath']):
+    os.makedirs(settings['ErrPath'])
+
+settings['EventPath'] = os.path.join(settings['PythonPath'], '01_Event_Logs')
+
+if not os.path.exists(settings['EventPath']):
+    os.makedirs(settings['EventPath'])
+
+sfile = shelve.open(os.path.join(settings['PythonPath'], 'Settings'))
 
 type(sfile)
 
 while not conn_chk:
     check_setting("Server")
     check_setting("Database")
+
+settings = copy.copy(sfile)
 
 sfile.close()
