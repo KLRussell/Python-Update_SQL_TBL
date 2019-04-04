@@ -31,13 +31,13 @@ class ExcelToSQL:
             '''.format(splittable[0], splittable[1]))
 
             if results.empty:
-                self.append_errors(table, data, 'Table {} in excel tab does not exist in the sql server'
+                self.append_errors(table, data, data, 'Table {} in excel tab does not exist in the sql server'
                                    .format(table))
                 return False
             else:
                 return True
         else:
-            self.append_errors(table, data, 'Table {} is not a proper (schema).(table) structure for excel tab'
+            self.append_errors(table, data, data, 'Table {} is not a proper (schema).(table) structure for excel tab'
                                .format(table))
             return False
 
@@ -66,7 +66,7 @@ class ExcelToSQL:
                 row = results.loc[results['Column_Name'] == col].reset_index()
 
                 if row.empty:
-                    self.append_errors(table, data, 'Column {0} does not exist in {1}'
+                    self.append_errors(table, data, data, 'Column {0} does not exist in {1}'
                                        .format(col, table))
                     return False
                 elif row['Data_Type'][0] in \
@@ -77,7 +77,7 @@ class ExcelToSQL:
                         lambda x: True if len(str(x)) > row['Character_Maximum_Length'][0] else False)
                     myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
-                    self.append_errors(table, myerr,
+                    self.append_errors(table, myerr, data,
                                        'Column {0} has {1} items that exceeds the limit percision for data type {2}'
                                        .format(col, len(myerr), row['Data_Type'][0]))
 
@@ -88,7 +88,7 @@ class ExcelToSQL:
                     cleaned_df[col] = data[col].map(lambda x: True if str(x).isnumeric() else False)
                     myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
-                    self.append_errors(table, myerr,
+                    self.append_errors(table, myerr, data,
                                        'Column {0} has {1} items that is not numeric for data type {2}'
                                        .format(col, len(myerr), row['Data_Type'][0]))
 
@@ -99,7 +99,7 @@ class ExcelToSQL:
                     cleaned_df[col] = data[col].map(lambda x: True if str(x).isdigit() else False)
                     myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
-                    self.append_errors(table, myerr,
+                    self.append_errors(table, myerr, data,
                                        'Column {0} has {1} items that has digits for data type {2}'
                                        .format(col, len(myerr), row['Data_Type'][0]))
 
@@ -133,7 +133,7 @@ class ExcelToSQL:
                         lambda x: True if x < minnum else False)
                     myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
-                    self.append_errors(table, myerr,
+                    self.append_errors(table, myerr, data,
                                        'Column {0} has {1} items that exceeds the minumum number size for data type {2}'
                                        .format(col, len(myerr), row['Data_Type'][0]))
 
@@ -145,7 +145,7 @@ class ExcelToSQL:
                         lambda x: True if x > maxnum else False)
                     myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
-                    self.append_errors(table, myerr,
+                    self.append_errors(table, myerr, data,
                                        'Column {0} has {1} items that exceeds the maximum number size for data type {2}'
                                        .format(col, len(myerr), row['Data_Type'][0]))
 
@@ -157,7 +157,7 @@ class ExcelToSQL:
                         lambda x: True if len(str(x)) > row['Character_Maximum_Length'][0] else False)
                     myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
-                    self.append_errors(table, myerr,
+                    self.append_errors(table, myerr, data,
                                        'Column {0} has {1} items that exceeds the precision size for data type {2}'
                                        .format(col, len(myerr), row['Data_Type'][0]))
 
@@ -168,7 +168,7 @@ class ExcelToSQL:
                     cleaned_df['Date'] = pd.to_datetime(data[col], errors='coerce')
                     myerr = data.loc[cleaned_df.loc[cleaned_df['Date'].isnull()].index].reset_index()
 
-                    self.append_errors(table, myerr,
+                    self.append_errors(table, myerr, data,
                                        'Column {0} has {1} items that isn''t in date/time format for data type {2}'
                                        .format(col, len(myerr), row['Data_Type'][0]))
 
@@ -179,7 +179,7 @@ class ExcelToSQL:
                     cleaned_df[col] = data[col].map(lambda x: True if str(x).isnumeric() else False)
                     myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
-                    self.append_errors(table, myerr,
+                    self.append_errors(table, myerr, data,
                                        'Column {0} has {1} items that is not numeric for data type {2}'
                                        .format(col, len(myerr), row['Data_Type'][0]))
 
@@ -202,7 +202,7 @@ class ExcelToSQL:
                             lambda x: True if x < minnum else False)
                         myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
-                        self.append_errors(table, myerr,
+                        self.append_errors(table, myerr, data,
                                            'Column {0} has {1} items that exceeds the minumum number size for data type {2}'
                                            .format(col, len(myerr), row['Data_Type'][0]))
 
@@ -214,7 +214,7 @@ class ExcelToSQL:
                             lambda x: True if x > maxnum else False)
                         myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
-                        self.append_errors(table, myerr,
+                        self.append_errors(table, myerr, data,
                                            'Column {0} has {1} items that exceeds the maximum number size for data type {2}'
                                            .format(col, len(myerr), row['Data_Type'][0]))
 
@@ -228,7 +228,7 @@ class ExcelToSQL:
                                                                             row['Numeric_Precision'][0]) else False)
                     myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
-                    self.append_errors(table, myerr,
+                    self.append_errors(table, myerr, data,
                                        'Column {0} has {1} items that exceeds the numeric precision for data type {2}'
                                        .format(col, len(myerr), row['Data_Type'][0]))
 
@@ -241,14 +241,24 @@ class ExcelToSQL:
                                            row['Numeric_Scale'][0]) or '.' not in str(x) else False)
                     myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
-                    self.append_errors(table, myerr,
+                    self.append_errors(table, myerr, data,
                                        'Column {0} has {1} items that exceeds the numeric scale for data type {2}'
                                        .format(col, len(myerr), row['Data_Type'][0]))
 
                     if len(data) < 1:
                         return False
+
+                if row['Is_Nullable'][0] == 'NO':
+                    myerr = data.loc[data[col].isnull()].reset_index()
+
+                    self.append_errors(table, myerr, data,
+                                       'Column {0} has {1} items that are null for data type {2} when null is not allowed'
+                                       .format(col, len(myerr), row['Data_Type'][0]))
+
+                    if len(data) < 1:
+                        return False
         else:
-            self.append_errors(table, data, 'Unable to find table {} in INFORMATION_SCHEMA.COLUMNS table'
+            self.append_errors(table, data, data, 'Unable to find table {} in INFORMATION_SCHEMA.COLUMNS table'
                                .format(table))
             return False
 
@@ -287,7 +297,7 @@ class ExcelToSQL:
 
                         return False
         else:
-            self.append_errors(table, data, 'Table {} in SQL does not have a Primary Key. Unable to update records'
+            self.append_errors(table, data, data, 'Table {} in SQL does not have a Primary Key. Unable to update records'
                                .format(table))
 
             return False
@@ -295,23 +305,44 @@ class ExcelToSQL:
         if self.primary_key:
             return True
         else:
-            self.append_errors(table, data, 'Tab {0} in excel has no Primary Key in tab. Please add one Primary Key as a column in this tab'.format(table))
+            self.append_errors(table, data, data, 'Tab {0} in excel has no Primary Key in tab. Please add one Primary Key as a column in this tab'.format(table))
 
             return False
 
-    def process_file(self, myfile):
-        xls_file = pd.ExcelFile(myfile)
-        for table in xls_file.sheet_names:
-            data = xls_file.parse(table)
+    def update_tbl(self, table, data):
+        self.asql.upload(data, 'UT_TMP')
 
-            if self.validate_tab(table, data) and self.validate_data(table, data):
-                print('success')
+        results = self.asql.query('''
+            select
+                A.{0}
+            from UT_TMP As A
+            left join {1} As B
+            on
+                A.{0} = B.{0}
+            
+            where
+                B.{0} is null
+        '''.format(self.primary_key, table))
 
-    def append_errors(self, table, df, errmsg):
-        if not df.empty:
-            write_log('{} Error(s) found. Appending to virtual list'.format(len(df.index)), 'warning')
-            self.errors.append([table, copy.copy(df), errmsg])
-            df.drop(df.index, inplace=True)
+        if not results.empty:
+            myerr = data[data[self.primary_key].isin(results[self.primary_key])]
+            self.append_errors(table, myerr, data,
+                               'Column {0} has {1} items that do not exist in table {2}'
+                               .format(self.primary_key, len(myerr), table))
+
+        if not data.empty:
+            print('success')
+        else:
+            print('error')
+
+    def append_errors(self, table, err, df, errmsg):
+        if not err.empty:
+            write_log('{} Error(s) found. Appending to virtual list'.format(len(err.index)), 'warning')
+            self.errors.append([table, copy.copy(err), errmsg])
+            df.drop(err.index, inplace=True)
+
+    def close_sql(self):
+        self.asql.close()
 
 
 if __name__ == '__main__':
@@ -324,4 +355,13 @@ if __name__ == '__main__':
     myobj = ExcelToSQL()
 
     for file in files:
-        myobj.process_file(file)
+        xls_file = pd.ExcelFile(file)
+
+        for table in xls_file.sheet_names:
+            data = xls_file.parse(table)
+
+            if myobj.validate_tab(table, data) and myobj.validate_data(table, data):
+                myobj.update_tbl(table, data)
+
+    myobj.close_sql()
+
