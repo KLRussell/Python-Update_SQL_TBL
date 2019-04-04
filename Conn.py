@@ -8,6 +8,8 @@ import shelve
 import pyodbc
 import copy
 import os
+import datetime
+import logging
 
 
 class SQLConnect:
@@ -169,6 +171,27 @@ def check_setting(setting_name):
 
 def init():
     global settings
+
+
+def write_log(message, action='info'):
+    filepath = os.path.join(settings['EventLogDir'],
+                            "{} Event_Log.txt".format(datetime.datetime.now().__format__("%Y%m%d")))
+
+    logging.basicConfig(filename=filepath,
+                        level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
+
+    print('{0} - {1} - {2}'.format(datetime.datetime.now(), action.upper(), message))
+
+    if action == 'debug':
+        logging.debug(message)
+    elif action == 'info':
+        logging.info(message)
+    elif action == 'warning':
+        logging.warning(message)
+    elif action == 'error':
+        logging.error(message)
+    elif action == 'critical':
+        logging.critical(message)
 
 
 settings = dict()
