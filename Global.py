@@ -53,6 +53,9 @@ class ShelfHandle:
     def change_config(self, filepath):
         self.filepath = filepath
 
+    def get_shelf_path(self):
+        return self.filepath
+
     def grab_item(self, key):
         if self.filepath and os.path.exists(self.filepath):
             sfile = shelve.open(self.filepath)
@@ -133,14 +136,7 @@ class ShelfHandle:
 class LogHandle:
     def __init__(self, settingsobj):
         if settingsobj:
-            while not settingsobj.grab_item('EventLog_Dir'):
-                settingsobj.add_item('EventLog_Dir')
-
-                if not os.path.exists(settingsobj.grab_item('EventLog_Dir')):
-                    settingsobj.del_item('EventLog_Dir')
-                    print('Error! Event Log directory does not exist!')
-
-            self.EventLog_Dir = settingsobj.grab_item('EventLog_Dir')
+            self.EventLog_Dir = os.path.join(settingsobj.get_shelf_path(), '01_Event_Logs')
         else:
             raise Exception('Settings object was not passed through')
 
