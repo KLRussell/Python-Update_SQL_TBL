@@ -360,7 +360,7 @@ class ExcelToSQL:
             write_log('{} Error(s) found. Appending to virtual list'.format(len(err.index)), 'warning')
             self.errors.append([table, copy.copy(err), errmsg])
             df.drop(err.index, inplace=True)
-    
+
     def process_errs(self, data):
         print('processing errors')
 
