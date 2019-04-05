@@ -5,17 +5,21 @@ import pathlib as pl
 import os
 import copy
 
-globalobjs = grabobjs(os.path.dirname(os.path.abspath(__file__)))
-ProcPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), '01_To_Process')
+CurrDir = os.path.dirname(os.path.abspath(__file__))
+ProcDir = os.path.join(CurrDir, '02_To_Process')
+ErrDir = os.path.join(CurrDir, '03_Errors')
 
 
 class ExcelToSQL:
-    errors = []
     primary_key = None
 
     def __init__(self):
-        self.asql = SQLConnect('alch')
-        self.asql.connect()
+        objs = grabobjs(CurrDir)
+
+        self.settings = objs['Settings']
+        self.event_obj = objs['Event_Log']
+        self.errors_obj = objs['Errors']
+        self.asql = objs['SQL'].connect('alch')
 
     def validate_tab(self, table, data):
         splittable = table.split('.')
@@ -371,21 +375,24 @@ class ExcelToSQL:
 if __name__ == '__main__':
     dfs = []
 
-    if not os.path.exists(ProcPath):
-        os.makedirs(ProcPath)
+    if not os.path.exists(ProcDir):
+        os.makedirs(ProcDir)
 
-    files = list(pl.Path(ProcPath).glob('*.xls*'))
+    if not os.path.exists(ErrDir):
+        os.makedirs(ErrDir)
+
+    files = list(pl.Path(ProcDir).glob('Update_*.xls*'))
     myobj = ExcelToSQL()
 
     for file in files:
         xls_file = pd.ExcelFile(file)
 
-        for table in xls_file.sheet_names:
-            data = xls_file.parse(table)
+        for tbl in xls_file.sheet_names:
+            df = xls_file.parse(tbl)
 
-            if myobj.validate_tab(table, data) and myobj.validate_data(table, data):
-                myobj.update_tbl(table, data)
-                myobj.process_errs(data)
+            if myobj.validate_tab(tbl, df) and myobj.validate_data(tbl, df):
+                myobj.update_tbl(tbl, df)
+                myobj.process_errs(df)
 
     myobj.close_sql()
 

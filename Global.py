@@ -19,8 +19,8 @@ def grabobjs(scriptdir):
         if len(list(pl.Path(scriptdir).glob('General_Settings.*'))) > 0:
             myobjs['Settings'] = ShelfHandle(os.path.join(scriptdir, 'General_Settings'))
         elif len(list(pl.Path(scriptdir).glob('Script_Settings.*'))) > 0:
-            obj = ShelfHandle(os.path.join(scriptdir, 'Script_Settings'))
-            myobjs['Settings'] = obj.grab_item('General_Settings_Path')
+            myobjs['Local_Settings'] = ShelfHandle(os.path.join(scriptdir, 'Script_Settings'))
+            myobjs['Settings'] = myobjs['Local_Settings'].grab_item('General_Settings_Path')
         else:
             myinput = None
             while not myinput:
@@ -33,11 +33,11 @@ def grabobjs(scriptdir):
             if myinput == scriptdir:
                 myobjs['Settings'] = ShelfHandle(os.path.join(scriptdir, 'General_Settings'))
             else:
-                obj = ShelfHandle(os.path.join(scriptdir, 'Script_Settings'))
-                obj.add_item('General_Settings_Path', myinput)
+                myobjs['Local_Settings'] = ShelfHandle(os.path.join(scriptdir, 'Script_Settings'))
+                myobjs['Local_Settings'].add_item('General_Settings_Path', myinput)
                 myobjs['Settings'] = ShelfHandle(os.path.join(myinput, 'General_Settings'))
 
-        myobjs['Event_Log'] = LogHandle(myobjs['Settings'])
+        myobjs['Event_Log'] = LogHandle(scriptdir)
         myobjs['SQL'] = SQLHandle(myobjs['Settings'])
         myobjs['Errors'] = ErrHandle(myobjs['Event_Log'])
 
@@ -62,7 +62,7 @@ class ShelfHandle:
             type(sfile)
 
             if key in sfile.keys():
-                myitem = sfile[k]
+                myitem = sfile[key]
             else:
                 myitem = None
 
@@ -70,7 +70,7 @@ class ShelfHandle:
 
             return myitem
 
-    def add_item(self, key, val=None):
+    def add_item(self, key, val=None, inputmsg=None):
         if self.filepath and os.path.exists(self.filepath) and key:
             sfile = shelve.open(self.filepath)
             type(sfile)
@@ -80,7 +80,10 @@ class ShelfHandle:
                     myinput = None
 
                     while not myinput:
-                        print("Please input value for {}:".format(key))
+                        if inputmsg:
+                            print(inputmsg)
+                        else:
+                            print("Please input value for {}:".format(key))
                         myinput = input()
 
                     sfile[key] = myinput
@@ -95,7 +98,7 @@ class ShelfHandle:
             type(sfile)
 
             if key in sfile.keys():
-                del sfile[k]
+                del sfile[key]
 
             sfile.close()
 
@@ -134,9 +137,12 @@ class ShelfHandle:
 
 
 class LogHandle:
-    def __init__(self, settingsobj):
-        if settingsobj:
-            self.EventLog_Dir = os.path.join(settingsobj.get_shelf_path(), '01_Event_Logs')
+    def __init__(self, scriptpath):
+        if scriptpath:
+            if not os.path.exists(os.path.join(scriptpath, '01_Event_Logs')):
+                os.makedirs(os.path.join(scriptpath, '01_Event_Logs'))
+
+            self.EventLog_Dir = os.path.join(scriptpath, '01_Event_Logs')
         else:
             raise Exception('Settings object was not passed through')
 
@@ -194,15 +200,15 @@ class SQLHandle:
     def val_settings(self):
         if self.conn_type in ['alch', 'sql']:
             if not self.settingsobj.grab_item('Server') and not self.settingsobj.grab_item('Database'):
-                self.settingsobj.add_item('Server')
-                self.settingsobj.add_item('Database')
+                self.settingsobj.add_item('Server', inputmsg='Please input Server to store in settings:')
+                self.settingsobj.add_item('Database', inputmsg='Please input Database name to store in settings:')
 
             self.create_conn_str(server=self.settingsobj.grab_item('Server')
                                  , database=self.settingsobj.grab_item('Database'))
 
         elif self.conn_type == 'dsn':
             if not self.settingsobj.grab_item('DSN'):
-                self.settingsobj.add_item('DSN')
+                self.settingsobj.add_item('DSN', inputmsg='Please input DSN name to store in settings:')
 
             self.create_conn_str(dsn=self.settingsobj.grab_item('DSN'))
 
