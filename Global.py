@@ -2,6 +2,7 @@ from pandas.io import sql
 from sqlalchemy.orm import sessionmaker
 from urllib.parse import quote_plus
 
+import pathlib as pl
 import pandas as pd
 import sqlalchemy as mysql
 import shelve
@@ -12,104 +13,139 @@ import logging
 
 
 def grabobjs(scriptdir):
-    myobjs = dict()
-    myobjs['Settings'] = SettingsHandle(scriptdir)
-    myobjs['Event_Log'] = LogHandle(myobjs['Settings'])
-    myobjs['SQL'] = SQLHandle(myobjs['Settings'])
-    myobjs['Errors'] = ErrHandle(myobjs['Event_Log'])
+    if scriptdir and os.path.exists(scriptdir):
+        myobjs = dict()
 
-    return myobjs
-
-
-class SettingsHandle:
-    settings = dict()
-    settingspath = None
-
-    def __init__(self, scriptdir):
-        self.load_script_settings(scriptdir)
-        sfile = shelve.open(self.settingspath)
-        type(sfile)
-
-        for k, v in sfile.items():
-            self.settings[k] = v
-
-        sfile.close()
-
-    def load_script_settings(self, scriptdir):
-        if scriptdir and os.path.exists(scriptdir):
-            scriptfilepath = os.path.join(scriptdir, 'Script_Settings')
-
-            sfile = shelve.open(scriptfilepath)
-            type(sfile)
-
-            while 'General_Settings_Path' not in sfile.keys():
-                print("Please input general settings path:")
-
-                sfile['General_Settings_Path'] = input()
-
-                if not sfile['General_Settings_Path'] or not os.path.exists(sfile['General_Settings_Path']):
-                    del sfile['General_Settings_Path']
-
-            self.settingspath = sfile['General_Settings_Path']
-            sfile.close()
+        if len(list(pl.Path(scriptdir).glob('General_Settings.*'))) > 0:
+            myobjs['Settings'] = ShelfHandle(os.path.join(scriptdir, 'General_Settings'))
+        elif len(list(pl.Path(scriptdir).glob('Script_Settings.*'))) > 0:
+            obj = ShelfHandle(os.path.join(scriptdir, 'Script_Settings'))
+            myobjs['Settings'] = obj.grab_item('General_Settings_Path')
         else:
-            raise Exception('Invalid scriptpath path')
+            myinput = None
+            while not myinput:
+                print("Please input a directory path where to setup general settings at:")
+                myinput = input()
 
-    def find_setting(self, setting_name):
-        if setting_name and setting_name in self.settings.keys():
-            return self.settings[setting_name]
+                if myinput and not os.path.exists(myinput):
+                    myinput = None
 
-    def remove_setting(self, setting_name):
-        if setting_name and setting_name in self.settings.keys():
-            del self.settings[setting_name]
-            sfile = shelve.open(self.settingspath)
+            if myinput == scriptdir:
+                myobjs['Settings'] = ShelfHandle(os.path.join(scriptdir, 'General_Settings'))
+            else:
+                obj = ShelfHandle(os.path.join(scriptdir, 'Script_Settings'))
+                obj.add_item('General_Settings_Path', myinput)
+                myobjs['Settings'] = ShelfHandle(os.path.join(myinput, 'General_Settings'))
+
+        myobjs['Event_Log'] = LogHandle(myobjs['Settings'])
+        myobjs['SQL'] = SQLHandle(myobjs['Settings'])
+        myobjs['Errors'] = ErrHandle(myobjs['Event_Log'])
+
+        return myobjs
+    else:
+        raise Exception('Invalid script path provided')
+
+
+class ShelfHandle:
+    def __init__(self, filepath=None):
+        self.filepath = filepath
+
+    def change_config(self, filepath):
+        self.filepath = filepath
+
+    def grab_item(self, key):
+        if self.filepath and os.path.exists(self.filepath):
+            sfile = shelve.open(self.filepath)
             type(sfile)
-            del sfile[setting_name]
+
+            if key in sfile.keys():
+                myitem = sfile[k]
+            else:
+                myitem = None
+
             sfile.close()
 
-    def append_settings(self, newsettings):
-        if type(newsettings) == 'dict' and len(newsettings) > 0:
-            sfile = shelve.open(self.settingspath)
+            return myitem
+
+    def add_item(self, key, val=None):
+        if self.filepath and os.path.exists(self.filepath) and key:
+            sfile = shelve.open(self.filepath)
             type(sfile)
 
-            for k, v in newsettings.items():
-                if k not in self.settings.keys():
-                    self.settings[k] = v
+            if key not in sfile.keys():
+                if not val:
+                    myinput = None
 
-            for k, v in newsettings.items():
-                if k not in sfile.keys():
-                    sfile[k] = v
+                    while not myinput:
+                        print("Please input value for {}:".format(key))
+                        myinput = input()
+
+                    sfile[key] = myinput
+                else:
+                    sfile[key] = val
 
             sfile.close()
 
-    def new_setting(self, setting_name):
-        if setting_name and setting_name not in self.settings.keys():
-            print("Please type {} value:".format(setting_name))
-            self.settings[setting_name] = input()
-            if not self.settings[setting_name]:
-                self.new_setting(setting_name)
-
-            sfile = shelve.open(self.settingspath)
+    def del_item(self, key):
+        if self.filepath and os.path.exists(self.filepath) and key:
+            sfile = shelve.open(self.filepath)
             type(sfile)
-            sfile[setting_name] = self.settings[setting_name]
+
+            if key in sfile.keys():
+                del sfile[k]
+
+            sfile.close()
+
+    def grab_list(self):
+        if self.filepath and os.path.exists(self.filepath):
+            mydict = dict()
+            sfile = shelve.open(self.filepath)
+            type(sfile)
+
+            for k, v in sfile.items():
+                mydict[k] = v
+
+            sfile.close()
+
+            return mydict
+
+    def empty_list(self):
+        if self.filepath and os.path.exists(self.filepath):
+            sfile = shelve.open(self.filepath)
+            type(sfile)
+
+            for k in sfile.keys():
+                del sfile[k]
+
+            sfile.close()
+
+    def add_list(self, dict_list):
+        if self.filepath and os.path.exists(self.filepath) and len(dict_list) > 0 and type(dict_list) == 'dict':
+            sfile = shelve.open(self.filepath)
+            type(sfile)
+
+            for k, v in dict_list.items():
+                sfile[k] = v
+
             sfile.close()
 
 
 class LogHandle:
     def __init__(self, settingsobj):
         if settingsobj:
-            self.settingsobj = settingsobj
+            while not settingsobj.grab_item('EventLog_Dir'):
+                settingsobj.add_item('EventLog_Dir')
 
-            while not self.settingsobj.find_setting('Event_Log_Path'):
-                self.settingsobj.new_setting('Event_Log_Path')
+                if not os.path.exists(settingsobj.grab_item('EventLog_Dir')):
+                    settingsobj.del_item('EventLog_Dir')
+                    print('Error! Event Log directory does not exist!')
 
-                if not os.path.exists(self.settingsobj.find_setting('Event_Log_Path')):
-                    self.settingsobj.remove_setting('Event_Log_Path')
+            self.EventLog_Dir = settingsobj.grab_item('EventLog_Dir')
         else:
             raise Exception('Settings object was not passed through')
 
     def write_log(self, message, action='info'):
-        filepath = os.path.join(self.settingsobj.find_setting('Event_Log_Path'),
+        filepath = os.path.join(self.EventLog_Dir,
                                 "{0}_{1}_Log.txt".format(datetime.datetime.now().__format__("%Y%m%d"), os.path
                                                          .basename(os.path.dirname(os.path.abspath(__file__)))))
 
@@ -161,18 +197,18 @@ class SQLHandle:
 
     def val_settings(self):
         if self.conn_type in ['alch', 'sql']:
-            if not self.settingsobj.find_setting('Server') and not self.settingsobj.find_setting('Database'):
-                self.settingsobj.new_setting('Server')
-                self.settingsobj.new_setting('Database')
+            if not self.settingsobj.grab_item('Server') and not self.settingsobj.grab_item('Database'):
+                self.settingsobj.add_item('Server')
+                self.settingsobj.add_item('Database')
 
-            self.create_conn_str(server=self.settingsobj.find_setting('Server')
-                                 , database=self.settingsobj.find_setting('Database'))
+            self.create_conn_str(server=self.settingsobj.grab_item('Server')
+                                 , database=self.settingsobj.grab_item('Database'))
 
         elif self.conn_type == 'dsn':
-            if not self.settingsobj.find_setting('DSN'):
-                self.settingsobj.new_setting('DSN')
+            if not self.settingsobj.grab_item('DSN'):
+                self.settingsobj.add_item('DSN')
 
-            self.create_conn_str(dsn=self.settingsobj.find_setting('DSN'))
+            self.create_conn_str(dsn=self.settingsobj.grab_item('DSN'))
 
     def conn_chk(self):
         exit_loop = False
@@ -189,8 +225,8 @@ class SQLHandle:
                     if obj._saved_cursor.arraysize > 0:
                         exit_loop = True
                     else:
-                        self.settingsobj.remove_setting('Server')
-                        self.settingsobj.remove_setting('Database')
+                        self.settingsobj.del_item('Server')
+                        self.settingsobj.del_item('Database')
                         print('Error! Server & Database combination are incorrect!')
 
                 else:
@@ -199,22 +235,22 @@ class SQLHandle:
                         exit_loop = True
                     else:
                         if self.conn_type == 'sql':
-                            self.settingsobj.remove_setting('Server')
-                            self.settingsobj.remove_setting('Database')
+                            self.settingsobj.del_item('Server')
+                            self.settingsobj.del_item('Database')
                             print('Error! Server & Database combination are incorrect!')
                         else:
-                            self.settingsobj.remove_setting('DSN')
+                            self.settingsobj.del_item('DSN')
                             print('Error! DSN is incorrect!')
 
                 self.close()
 
             except ValueError as a:
                 if self.conn_type in ['alch', 'sql']:
-                    self.settingsobj.remove_setting('Server')
-                    self.settingsobj.remove_setting('Database')
+                    self.settingsobj.del_item('Server')
+                    self.settingsobj.del_item('Database')
                     print('Error! Server & Database combination are incorrect!')
                 else:
-                    self.settingsobj.remove_setting('DSN')
+                    self.settingsobj.del_item('DSN')
                     print('Error! DSN is incorrect!')
 
                 self.close()
@@ -313,8 +349,12 @@ class SQLHandle:
 
 
 class ErrHandle:
+    errors = dict()
+
     def __init__(self, logobj):
-        self.errors = dict()
+        if not logobj:
+            raise Exception('Event Log object not included in parameter')
+
         self.logobj = logobj
 
     @staticmethod
