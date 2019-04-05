@@ -1,11 +1,11 @@
-from Conn import SQLConnect
-from Conn import write_log
+from Global import grabobjs
 
 import pandas as pd
 import pathlib as pl
 import os
 import copy
 
+globalobjs = grabobjs(os.path.dirname(os.path.abspath(__file__)))
 ProcPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), '01_To_Process')
 
 
