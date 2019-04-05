@@ -61,7 +61,7 @@ class SettingsHandle:
 
     def remove_setting(self, setting_name):
         if setting_name and setting_name in self.settings.keys():
-            del settings[setting_name]
+            del self.settings[setting_name]
             sfile = shelve.open(self.settingspath)
             type(sfile)
             del sfile[setting_name]
@@ -85,13 +85,13 @@ class SettingsHandle:
     def new_setting(self, setting_name):
         if setting_name and setting_name not in self.settings.keys():
             print("Please type {} value:".format(setting_name))
-            settings[setting_name] = input()
-            if not settings[setting_name]:
+            self.settings[setting_name] = input()
+            if not self.settings[setting_name]:
                 self.new_setting(setting_name)
 
             sfile = shelve.open(self.settingspath)
             type(sfile)
-            sfile[setting_name] = settings[setting_name]
+            sfile[setting_name] = self.settings[setting_name]
             sfile.close()
 
 
