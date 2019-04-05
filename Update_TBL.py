@@ -472,8 +472,9 @@ def process_updates(info):
             df = xls_file.parse(tbl)
 
             if myobj.validate_tab(tbl, df) and myobj.validate_data(tbl, df):
-                myobj.update_tbl(tbl, df)
-                myobj.process_errs(df)
+                print('success')
+                # myobj.update_tbl(tbl, df)
+                # myobj.process_errs(df)
 
     myobj.close_sql()
     del myobj
