@@ -83,9 +83,9 @@ class ExcelToSQL:
                     self.errors_obj.append_errors(mylist)
 
                     return False
-                elif row['Data_Type'][0] in \
-                        ['xml', 'text', 'varchar', 'nvarchar', 'uniqueidentifier', 'nchar', 'geography', 'char', 'ntext']\
-                        and str(row['Character_Maximum_Length'][0]).isnumeric():
+                elif row['Data_Type'][0] in ['xml', 'text', 'varchar', 'nvarchar', 'uniqueidentifier', 'nchar',
+                                             'geography', 'char', 'ntext'] and \
+                        str(row['Character_Maximum_Length'][0]).isnumeric():
                     cleaned_df = pd.DataFrame()
                     cleaned_df[col] = data[col].map(
                         lambda x: True if len(str(x)) > row['Character_Maximum_Length'][0] else False)
