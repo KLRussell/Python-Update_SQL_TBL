@@ -12,7 +12,7 @@ import datetime
 import logging
 
 
-def grabobjs(scriptdir, sqlconn=None):
+def grabobjs(scriptdir, conn_type=None):
     if scriptdir and os.path.exists(scriptdir):
         myobjs = dict()
         myinput = None
@@ -41,8 +41,8 @@ def grabobjs(scriptdir, sqlconn=None):
         myobjs['SQL'] = SQLHandle(myobjs['Settings'])
         myobjs['Errors'] = ErrHandle(myobjs['Event_Log'])
 
-        if myinput and sqlconn:
-            myobjs['SQL'].connect(sqlconn)
+        if myinput and conn_type:
+            myobjs['SQL'].connect(conn_type)
             myobjs['SQL'].close()
 
         return myobjs
