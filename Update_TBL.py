@@ -487,9 +487,10 @@ class ExcelToSQL:
             owner_sid = sd.GetSecurityDescriptorOwner()
             creator, domain, type = win32security.LookupAccountSid(None, owner_sid)
 
-            Global_Objs['Event_Log'].write_log('Appending errors into {0} ({1})'.format(file, creator), 'error')
+            Global_Objs['Event_Log'].write_log('Appending errors into {0} ({1})'.format(os.path.basename(file),
+                                                                                        creator), 'error')
 
-            with pd.ExcelWriter(file) as writer:
+            with pd.ExcelWriter(os.path.join(ErrDir, os.path.basename(file))) as writer:
                 for err in myerrs:
                     errmsgs.append(('%s\\%s' % (domain, creator), err[1], err[2]))
                     err[1].to_excel(writer, sheet_name=err[0])
@@ -517,7 +518,7 @@ def process_updates(info):
     myobj = ExcelToSQL(info[1])
 
     for file in info[0]:
-        Global_Objs['Event_Log'].write_log('Processing file {}'.format(file))
+        Global_Objs['Event_Log'].write_log('Processing file {}'.format(os.path.basename(file)))
         xls_file = pd.ExcelFile(file)
 
         for tbl in xls_file.sheet_names:
