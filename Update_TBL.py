@@ -15,7 +15,7 @@ ProcDir = os.path.join(CurrDir, '02_To_Process')
 ErrDir = os.path.join(CurrDir, '03_Errors')
 PreserveDir = os.path.join(CurrDir, '04_Preserve')
 Global_Objs = grabobjs(CurrDir)
-Preserve_Obj = ShelfHandle(PreserveDir)
+Preserve_Obj = None
 
 
 class ExcelToSQL:
@@ -546,6 +546,7 @@ if __name__ == '__main__':
     if not os.path.exists(PreserveDir):
         os.makedirs(PreserveDir)
 
+    Preserve_Obj = ShelfHandle(os.path.join(PreserveDir, 'Data_Locker'))
     has_updates = check_for_updates()
 
     if has_updates:
