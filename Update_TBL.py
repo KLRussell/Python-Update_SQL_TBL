@@ -492,3 +492,5 @@ if __name__ == '__main__':
         # self.settings = Global_Objs['Settings']
         Global_Objs['Event_Log'].write_log('Found {} files to process'.format(len(has_updates[0])))
         process_updates(has_updates)
+    else:
+        Global_Objs['Event_Log'].write_log('Found no files to process')

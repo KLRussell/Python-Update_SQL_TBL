@@ -38,6 +38,7 @@ def grabobjs(scriptdir):
                 myobjs['Settings'] = ShelfHandle(os.path.join(myinput, 'General_Settings'))
 
         myobjs['Event_Log'] = LogHandle(scriptdir)
+
         myobjs['SQL'] = SQLHandle(myobjs['Settings'])
         myobjs['Errors'] = ErrHandle(myobjs['Event_Log'])
 
@@ -48,30 +49,36 @@ def grabobjs(scriptdir):
 
 class ShelfHandle:
     def __init__(self, filepath=None):
-        self.filepath = filepath
+        if os.path.exists(os.path.split(filepath)[0]):
+            self.filepath = os.path.abspath(filepath)
+            sfile = shelve.open(filepath)
+            type(sfile)
+            sfile.close()
+        else:
+            raise Exception('Invalid filepath has been provided')
 
     def change_config(self, filepath):
-        self.filepath = filepath
+        if os.path.exists(os.path.split(self.filepath)[0]):
+            self.filepath = filepath
 
     def get_shelf_path(self):
         return self.filepath
 
     def grab_item(self, key):
-        if self.filepath and os.path.exists(self.filepath):
-            sfile = shelve.open(self.filepath)
-            type(sfile)
+        sfile = shelve.open(self.filepath)
+        type(sfile)
 
-            if key in sfile.keys():
-                myitem = sfile[key]
-            else:
-                myitem = None
+        if key in sfile.keys():
+            myitem = sfile[key]
+        else:
+            myitem = None
 
-            sfile.close()
+        sfile.close()
 
-            return myitem
+        return myitem
 
     def add_item(self, key, val=None, inputmsg=None):
-        if self.filepath and os.path.exists(self.filepath) and key:
+        if key:
             sfile = shelve.open(self.filepath)
             type(sfile)
 
@@ -93,7 +100,7 @@ class ShelfHandle:
             sfile.close()
 
     def del_item(self, key):
-        if self.filepath and os.path.exists(self.filepath) and key:
+        if key:
             sfile = shelve.open(self.filepath)
             type(sfile)
 
@@ -103,30 +110,28 @@ class ShelfHandle:
             sfile.close()
 
     def grab_list(self):
-        if self.filepath and os.path.exists(self.filepath):
-            mydict = dict()
-            sfile = shelve.open(self.filepath)
-            type(sfile)
+        mydict = dict()
+        sfile = shelve.open(self.filepath)
+        type(sfile)
 
-            for k, v in sfile.items():
-                mydict[k] = v
+        for k, v in sfile.items():
+            mydict[k] = v
 
-            sfile.close()
+        sfile.close()
 
-            return mydict
+        return mydict
 
     def empty_list(self):
-        if self.filepath and os.path.exists(self.filepath):
-            sfile = shelve.open(self.filepath)
-            type(sfile)
+        sfile = shelve.open(self.filepath)
+        type(sfile)
 
-            for k in sfile.keys():
-                del sfile[k]
+        for k in sfile.keys():
+            del sfile[k]
 
-            sfile.close()
+        sfile.close()
 
     def add_list(self, dict_list):
-        if self.filepath and os.path.exists(self.filepath) and len(dict_list) > 0 and type(dict_list) == 'dict':
+        if len(dict_list) > 0 and type(dict_list) == 'dict':
             sfile = shelve.open(self.filepath)
             type(sfile)
 
