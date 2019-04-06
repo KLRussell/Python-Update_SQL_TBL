@@ -12,9 +12,10 @@ import datetime
 import logging
 
 
-def grabobjs(scriptdir):
+def grabobjs(scriptdir, sqlconn=None):
     if scriptdir and os.path.exists(scriptdir):
         myobjs = dict()
+        myinput = None
 
         if len(list(pl.Path(scriptdir).glob('General_Settings.*'))) > 0:
             myobjs['Settings'] = ShelfHandle(os.path.join(scriptdir, 'General_Settings'))
@@ -22,7 +23,6 @@ def grabobjs(scriptdir):
             myobjs['Local_Settings'] = ShelfHandle(os.path.join(scriptdir, 'Script_Settings'))
             myobjs['Settings'] = myobjs['Local_Settings'].grab_item('General_Settings_Path')
         else:
-            myinput = None
             while not myinput:
                 print("Please input a directory path where to setup general settings at:")
                 myinput = input()
@@ -38,9 +38,12 @@ def grabobjs(scriptdir):
                 myobjs['Settings'] = ShelfHandle(os.path.join(myinput, 'General_Settings'))
 
         myobjs['Event_Log'] = LogHandle(scriptdir)
-
         myobjs['SQL'] = SQLHandle(myobjs['Settings'])
         myobjs['Errors'] = ErrHandle(myobjs['Event_Log'])
+
+        if myinput and sqlconn:
+            myobjs['SQL'].connect(sqlconn)
+            myobjs['SQL'].close()
 
         return myobjs
     else:

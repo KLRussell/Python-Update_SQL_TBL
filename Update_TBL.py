@@ -12,7 +12,7 @@ CurrDir = os.path.dirname(os.path.abspath(__file__))
 ProcDir = os.path.join(CurrDir, '02_To_Process')
 ErrDir = os.path.join(CurrDir, '03_Errors')
 PreserveDir = os.path.join(CurrDir, '04_Preserve')
-Global_Objs = grabobjs(CurrDir)
+Global_Objs = grabobjs(CurrDir, 'alch')
 Preserve_Obj = None
 
 
@@ -22,7 +22,8 @@ class ExcelToSQL:
     def __init__(self, mode):
         self.mode = mode
         self.errors_obj = Global_Objs['Errors']
-        self.asql = Global_Objs['SQL'].connect('alch')
+        self.asql = Global_Objs['SQL']
+        self.asql.connect('alch')
 
     def validate_tab(self, table, data):
         splittable = table.split('.')
