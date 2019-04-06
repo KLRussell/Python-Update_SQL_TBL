@@ -6,7 +6,9 @@ import pandas as pd
 import pathlib as pl
 import os
 import copy
-import pwd
+import win32api
+import win32con
+import win32security
 
 CurrDir = os.path.dirname(os.path.abspath(__file__))
 ProcDir = os.path.join(CurrDir, '02_To_Process')
@@ -481,13 +483,15 @@ class ExcelToSQL:
 
         if myerrs:
             errmsgs = []
-            creator = pwd.getpwuid(os.stat(file).st_uid).pw_name
+            sd = win32security.GetFileSecurity(file, win32security.OWNER_SECURITY_INFORMATION)
+            owner_sid = sd.GetSecurityDescriptorOwner()
+            creator, domain, type = win32security.LookupAccountSid(None, owner_sid)
 
             Global_Objs['Event_Log'].write_log('Appending errors into {0} ({1})'.format(file, creator), 'error')
 
             with pd.ExcelWriter(file) as writer:
                 for err in myerrs:
-                    errmsgs.append((creator, err[1], err[2]))
+                    errmsgs.append(('%s\\%s' % (domain, creator), err[1], err[2]))
                     err[1].to_excel(writer, sheet_name=err[0])
 
                 df = pd.DataFrame(errmsgs, ['File_Creator_Name', 'Tab_Name', 'Errors'])
