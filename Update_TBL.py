@@ -9,19 +9,16 @@ import copy
 CurrDir = os.path.dirname(os.path.abspath(__file__))
 ProcDir = os.path.join(CurrDir, '02_To_Process')
 ErrDir = os.path.join(CurrDir, '03_Errors')
+Global_Objs = grabobjs(CurrDir)
 
 
 class ExcelToSQL:
     primary_key = None
 
     def __init__(self, mode):
-        objs = grabobjs(CurrDir)
-
         self.mode = mode
-        self.settings = objs['Settings']
-        self.event_obj = objs['Event_Log']
-        self.errors_obj = objs['Errors']
-        self.asql = objs['SQL'].connect('alch')
+        self.errors_obj = Global_Objs['Errors']
+        self.asql = Global_Objs['SQL'].connect('alch')
 
     def validate_tab(self, table, data):
         splittable = table.split('.')
@@ -466,10 +463,12 @@ def process_updates(info):
     myobj = ExcelToSQL(info[1])
 
     for file in info[0]:
+        Global_Objs['Event_Log'].write_log('Processing file {}'.format(file))
         xls_file = pd.ExcelFile(file)
 
         for tbl in xls_file.sheet_names:
             df = xls_file.parse(tbl)
+            Global_Objs['Event_Log'].write_log('Validating tab {} for errors'.format(tbl))
 
             if myobj.validate_tab(tbl, df) and myobj.validate_data(tbl, df):
                 print('success')
@@ -487,11 +486,9 @@ if __name__ == '__main__':
     if not os.path.exists(ErrDir):
         os.makedirs(ErrDir)
 
-    # while True:
-    has_updates = None
+    has_updates = check_for_updates()
 
-    while has_updates is None:
-        has_updates = check_for_updates()
-        sleep(1)
-
-    process_updates(has_updates)
+    if has_updates:
+        # self.settings = Global_Objs['Settings']
+        Global_Objs['Event_Log'].write_log('Found {} files to process'.format(len(has_updates[0])))
+        process_updates(has_updates)
