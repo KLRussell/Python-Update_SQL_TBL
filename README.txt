@@ -57,7 +57,7 @@ HOW IT WORKS:
 
 	- Execute Update_TBL.py
 
-GRAB FROM PRESEVE LOCKER:
+GRAB FROM PRESERVE LOCKER:
 	- Run Update_TBL_Locker.py
 
 	- Select a date from Preserve Locker to export into excel spreadsheet
