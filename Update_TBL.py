@@ -509,10 +509,10 @@ class ExcelToSQL:
 
             if mylist:
                 Preserve_Obj.del_item(today)
-                mylist.append(['%s\\%s' % (domain, creator), table, df])
+                mylist.append(['%s\\%s' % (domain, creator), table, df, datetime.datetime.now()])
                 Preserve_Obj.add_item(today, mylist)
             else:
-                mylist = [['%s\\%s' % (domain, creator), table, df]]
+                mylist = [['%s\\%s' % (domain, creator), table, df, datetime.datetime.now()]]
                 Preserve_Obj.add_item(today, mylist)
 
     def process_errs(self, file):

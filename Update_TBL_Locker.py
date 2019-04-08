@@ -1,6 +1,5 @@
 from Global import ShelfHandle
 import os
-import sys
 from tkinter import *
 
 CurrDir = os.path.dirname(os.path.abspath(__file__))
@@ -16,7 +15,11 @@ def populatebox(listbox):
 
 
 def button1():
-    print('hi')
+    if listbox.curselection():
+        myitems = ShelfObj.grab_item(listbox.get(listbox.curselection()))
+
+        for item in myitems:
+            print(item)
 
 
 def cancel():
