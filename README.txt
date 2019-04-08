@@ -24,6 +24,9 @@ script's filepath.
 - Script will check table if table has an edit date column, and script will automatically update that column
 with the current datetime.
 
+- A secondary script will export items from locker into an excel spreadsheet
+
+
 INSTALLATION:
 	- Global.py can be placed in one of the PYTHONPATH directories
 
@@ -54,4 +57,12 @@ HOW IT WORKS:
 
 	- Execute Update_TBL.py
 
+GRAB FROM PRESEVE LOCKER:
+	- Run Update_TBL_Locker.py
+
+	- Select a date from Preserve Locker to export into excel spreadsheet
+
+	- Data will be exported into the '04_Preserve\Data_Locker_Export' directory of your script directory
+
+	- Tab 'Append_Details' show details of each tab for that day in the Locker
 
