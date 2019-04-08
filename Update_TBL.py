@@ -474,6 +474,9 @@ class ExcelToSQL:
             creator, domain, type = win32security.LookupAccountSid(None, owner_sid)
             mylist = Preserve_Obj.grab_item(today)
 
+            Global_Objs['Event_Log'].write_log('Shelfing updates from {0} ({1}\\{2})'.format(os.path.basename(file),
+                                                                                             domain, creator))
+
             if mylist:
                 Preserve_Obj.del_item(today)
                 mylist.append(['%s\\%s' % (domain, creator), table, df])
