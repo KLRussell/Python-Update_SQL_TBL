@@ -396,21 +396,21 @@ class ErrHandle:
         if type(err_items) == 'list' and not err_items:
             self.logobj.write_log('Error(s) found. Appending to virtual list', 'warning')
 
-            if key and key in self.errors.keys:
+            if key and key in self.errors.keys():
                 self.errors[key] = self.errors[key].append(err_items)
             elif key:
                 self.errors[key] = [].append(err_items)
-            elif 'default' in self.errors.keys:
+            elif 'default' in self.errors.keys():
                 self.errors['default'] = self.errors['default'].append(err_items)
             else:
                 self.errors['default'] = [].append(err_items)
 
     def grab_errors(self, key=None):
-        if key and key in self.errors.keys:
+        if key and key in self.errors.keys():
             mylist = self.errors[key]
             del self.errors[key]
             return mylist
-        elif not key and 'default' in self.errors.keys:
+        elif not key and 'default' in self.errors.keys():
             mylist = self.errors['default']
             del self.errors['default']
             return mylist

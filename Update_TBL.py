@@ -466,16 +466,17 @@ class ExcelToSQL:
 
     @staticmethod
     def shelf_old(df):
-        today = datetime.datetime.now().__format__("%Y%m%d")
-        mylist = Preserve_Obj.grab_item(today)
+        if not df.empty:
+            today = datetime.datetime.now().__format__("%Y%m%d")
+            mylist = Preserve_Obj.grab_item(today)
 
-        if mylist:
-            Preserve_Obj.del_item(today)
-            mylist.append(df)
-            Preserve_Obj.add_item(today, mylist)
-        else:
-            mylist = [].append(df)
-            Preserve_Obj.add_item(today, mylist)
+            if mylist:
+                Preserve_Obj.del_item(today)
+                mylist.append(df)
+                Preserve_Obj.add_item(today, mylist)
+            else:
+                mylist = [df]
+                Preserve_Obj.add_item(today, mylist)
 
     def process_errs(self, file):
         myerrs = self.errors_obj.grab_errors()
@@ -518,6 +519,7 @@ def process_updates(info):
 
     for file in info[0]:
         Global_Objs['Event_Log'].write_log('Processing file {}'.format(os.path.basename(file)))
+        print(file)
         xls_file = pd.ExcelFile(file)
 
         for tbl in xls_file.sheet_names:
