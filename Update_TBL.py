@@ -483,7 +483,8 @@ class ExcelToSQL:
 
         if myerrs:
             errmsgs = []
-            sd = win32security.GetFileSecurity(file, win32security.OWNER_SECURITY_INFORMATION)
+            # win32security.DACL_SECURITY_INFORMATION
+            sd = win32security.GetFileSecurity(os.fsdecode(file), win32security.OWNER_SECURITY_INFORMATION)
             owner_sid = sd.GetSecurityDescriptorOwner()
             creator, domain, type = win32security.LookupAccountSid(None, owner_sid)
 
@@ -492,7 +493,7 @@ class ExcelToSQL:
 
             with pd.ExcelWriter(os.path.join(ErrDir, os.path.basename(file))) as writer:
                 for err in myerrs:
-                    errmsgs.append(('%s\\%s' % (domain, creator), err[1], err[2]))
+                    errmsgs.append(('%s\\%s' % (domain, creator), err[0], err[2]))
                     err[1].to_excel(writer, sheet_name=err[0])
 
                 df = pd.DataFrame(errmsgs, ['File_Creator_Name', 'Tab_Name', 'Errors'])
