@@ -55,187 +55,104 @@ class ExcelToSQL:
             return False
 
     def validate_data(self, table, data):
-        self.primary_key = None
+        if len(data) > 0:
+            self.primary_key = None
 
-        results = self.asql.query('''
-            select
-                Column_Name,
-                Is_Nullable,
-                Data_Type,
-                Character_Maximum_Length,
-                Numeric_Precision,
-                Numeric_Scale
+            results = self.asql.query('''
+                select
+                    Column_Name,
+                    Is_Nullable,
+                    Data_Type,
+                    Character_Maximum_Length,
+                    Numeric_Precision,
+                    Numeric_Scale
+    
+                from INFORMATION_SCHEMA.COLUMNS
+    
+                where
+                    TABLE_SCHEMA = '{0}'
+                        and
+                    TABLE_NAME = '{1}'
+            '''.format(table.split('.')[0], table.split('.')[1]))
 
-            from INFORMATION_SCHEMA.COLUMNS
+            if not results.empty:
+                for col in data.columns.tolist():
+                    row = results.loc[results['Column_Name'] == col].reset_index()
 
-            where
-                TABLE_SCHEMA = '{0}'
-                    and
-                TABLE_NAME = '{1}'
-        '''.format(table.split('.')[0], table.split('.')[1]))
-
-        if not results.empty:
-            for col in data.columns.tolist():
-                row = results.loc[results['Column_Name'] == col].reset_index()
-
-                if row.empty:
-                    mylist = [copy.copy(table), copy.copy(data), 'Column {0} does not exist in {1}'.format(col, table)]
-                    self.errors_obj.append_errors(mylist)
-
-                    return False
-                elif row['Data_Type'][0] in ['xml', 'text', 'varchar', 'nvarchar', 'uniqueidentifier', 'nchar',
-                                             'geography', 'char', 'ntext'] and \
-                        is_number(str(row['Character_Maximum_Length'][0]), True):
-
-                    cleaned_df = pd.DataFrame()
-                    cleaned_df[col] = data[col].map(
-                        lambda x: None if len(str(x)) > int(row['Character_Maximum_Length'][0]) else True)
-                    myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
-
-                    if not myerr.empty:
-                        mylist = [copy.copy(table), copy.copy(myerr),
-                                  'Column {0} has {1} items that exceeds the limit percision for data type {2}'
-                                      .format(col, len(myerr), row['Data_Type'][0])]
+                    if row.empty:
+                        mylist = [copy.copy(table), copy.copy(data), 'Column {0} does not exist in {1}'.format(col, table)]
                         self.errors_obj.append_errors(mylist)
-                        self.errors_obj.trim_df(data, myerr)
 
-                    if len(data) < 1:
                         return False
-                elif row['Data_Type'][0] in ['varbinary', 'binary', 'bit', 'int', 'tinyint', 'smallint', 'bigint']:
-                    cleaned_df = pd.DataFrame()
-                    cleaned_df[col] = data[col].map(lambda x: True if is_number(str(x)) else None)
-                    myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
+                    elif row['Data_Type'][0] in ['xml', 'text', 'varchar', 'nvarchar', 'uniqueidentifier', 'nchar',
+                                                 'geography', 'char', 'ntext'] and \
+                            is_number(str(row['Character_Maximum_Length'][0]), True):
 
-                    if not myerr.empty:
-                        mylist = [copy.copy(table), copy.copy(myerr),
-                                  'Column {0} has {1} items that is not numeric for data type {2}'
-                                      .format(col, len(myerr), row['Data_Type'][0])]
-                        self.errors_obj.append_errors(mylist)
-                        self.errors_obj.trim_df(data, myerr)
+                        cleaned_df = pd.DataFrame()
+                        cleaned_df[col] = data[col].map(
+                            lambda x: None if len(str(x)) > int(row['Character_Maximum_Length'][0]) else True)
+                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
-                    if len(data) < 1:
-                        return False
+                        if not myerr.empty:
+                            mylist = [copy.copy(table), copy.copy(myerr),
+                                      'Column {0} has {1} items that exceeds the limit percision for data type {2}'
+                                          .format(col, len(myerr), row['Data_Type'][0])]
+                            self.errors_obj.append_errors(mylist)
+                            self.errors_obj.trim_df(data, myerr)
 
-                    cleaned_df = pd.DataFrame()
-                    cleaned_df[col] = data[col].map(lambda x: True if str(x).isdigit() else None)
-                    myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
+                        if len(data) < 1:
+                            return False
+                    elif row['Data_Type'][0] in ['varbinary', 'binary', 'bit', 'int', 'tinyint', 'smallint', 'bigint']:
+                        cleaned_df = pd.DataFrame()
+                        cleaned_df[col] = data[col].map(lambda x: True if is_number(str(x)) else None)
+                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
-                    if not myerr.empty:
-                        mylist = [copy.copy(table), copy.copy(myerr),
-                                  'Column {0} has {1} items that has digits for data type {2}'
-                                      .format(col, len(myerr), row['Data_Type'][0])]
-                        self.errors_obj.append_errors(mylist)
-                        self.errors_obj.trim_df(data, myerr)
+                        if not myerr.empty:
+                            mylist = [copy.copy(table), copy.copy(myerr),
+                                      'Column {0} has {1} items that is not numeric for data type {2}'
+                                          .format(col, len(myerr), row['Data_Type'][0])]
+                            self.errors_obj.append_errors(mylist)
+                            self.errors_obj.trim_df(data, myerr)
 
-                    if len(data) < 1:
-                        return False
+                        if len(data) < 1:
+                            return False
 
-                    if row['Data_Type'][0] in ['varbinary', 'binary']:
-                        minnum = 1
-                        maxnum = 8000
-                    elif row['Data_Type'][0] == 'bit':
-                        minnum = 0
-                        maxnum = 1
-                    elif row['Data_Type'][0] == 'tinyint':
-                        minnum = 0
-                        maxnum = 255
-                    elif row['Data_Type'][0] == 'smallint':
-                        minnum = -32768
-                        maxnum = 32767
-                    elif row['Data_Type'][0] == 'int':
-                        minnum = -2147483648
-                        maxnum = 2147483647
-                    elif row['Data_Type'][0] == 'bigint':
-                        minnum = -9223372036854775808
-                        maxnum = 9223372036854775807
-                    else:
-                        minnum = 0
-                        maxnum = 0
+                        cleaned_df = pd.DataFrame()
+                        cleaned_df[col] = data[col].map(lambda x: True if is_digit(str(x)) else None)
+                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
-                    cleaned_df = pd.DataFrame()
-                    cleaned_df[col] = data[col].map(
-                        lambda x: None if x < minnum else True)
-                    myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
+                        if not myerr.empty:
+                            mylist = [copy.copy(table), copy.copy(myerr),
+                                      'Column {0} has {1} items that has digits for data type {2}'
+                                          .format(col, len(myerr), row['Data_Type'][0])]
+                            self.errors_obj.append_errors(mylist)
+                            self.errors_obj.trim_df(data, myerr)
 
-                    if not myerr.empty:
-                        mylist = [copy.copy(table), copy.copy(myerr),
-                                  'Column {0} has {1} items that exceeds the minumum number size for data type {2}'
-                                      .format(col, len(myerr), row['Data_Type'][0])]
-                        self.errors_obj.append_errors(mylist)
-                        self.errors_obj.trim_df(data, myerr)
+                        if len(data) < 1:
+                            return False
 
-                    if len(data) < 1:
-                        return False
+                        if row['Data_Type'][0] in ['varbinary', 'binary']:
+                            minnum = 1
+                            maxnum = 8000
+                        elif row['Data_Type'][0] == 'bit':
+                            minnum = 0
+                            maxnum = 1
+                        elif row['Data_Type'][0] == 'tinyint':
+                            minnum = 0
+                            maxnum = 255
+                        elif row['Data_Type'][0] == 'smallint':
+                            minnum = -32768
+                            maxnum = 32767
+                        elif row['Data_Type'][0] == 'int':
+                            minnum = -2147483648
+                            maxnum = 2147483647
+                        elif row['Data_Type'][0] == 'bigint':
+                            minnum = -9223372036854775808
+                            maxnum = 9223372036854775807
+                        else:
+                            minnum = 0
+                            maxnum = 0
 
-                    cleaned_df = pd.DataFrame()
-                    cleaned_df[col] = data[col].map(
-                        lambda x: None if x > maxnum else True)
-                    myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
-
-                    if not myerr.empty:
-                        mylist = [copy.copy(table), copy.copy(myerr),
-                                  'Column {0} has {1} items that exceeds the maximum number size for data type {2}'
-                                      .format(col, len(myerr), row['Data_Type'][0])]
-                        self.errors_obj.append_errors(mylist)
-                        self.errors_obj.trim_df(data, myerr)
-
-                    if len(data) < 1:
-                        return False
-
-                    cleaned_df = pd.DataFrame()
-                    cleaned_df[col] = data[col].map(
-                        lambda x: None if len(str(x)) > row['Character_Maximum_Length'][0] else True)
-                    myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
-
-                    if not myerr.empty:
-                        mylist = [copy.copy(table), copy.copy(myerr),
-                                  'Column {0} has {1} items that exceeds the precision size for data type {2}'
-                                      .format(col, len(myerr), row['Data_Type'][0])]
-                        self.errors_obj.append_errors(mylist)
-                        self.errors_obj.trim_df(data, myerr)
-
-                    if len(data) < 1:
-                        return False
-                elif row['Data_Type'][0] in ['smalldatetime', 'date', 'datetime', 'datetime2', 'time']:
-                    cleaned_df = pd.DataFrame()
-                    cleaned_df['Date'] = pd.to_datetime(data[col], errors='coerce')
-                    myerr = data.loc[cleaned_df.loc[cleaned_df['Date'].isnull()].index].reset_index()
-
-                    if not myerr.empty:
-                        mylist = [copy.copy(table), copy.copy(myerr),
-                                  'Column {0} has {1} items that isn''t in date/time format for data type {2}'
-                                      .format(col, len(myerr), row['Data_Type'][0])]
-                        self.errors_obj.append_errors(mylist)
-                        self.errors_obj.trim_df(data, myerr)
-
-                    if len(data) < 1:
-                        return False
-                elif row['Data_Type'][0] in ['money', 'smallmoney', 'numeric', 'decimal', 'float', 'real']:
-                    cleaned_df = pd.DataFrame()
-                    cleaned_df[col] = data[col].map(lambda x: True if is_number(str(x)) else None)
-                    myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
-
-                    if not myerr.empty:
-                        mylist = [copy.copy(table), copy.copy(myerr),
-                                  'Column {0} has {1} items that is not numeric for data type {2}'
-                                      .format(col, len(myerr), row['Data_Type'][0])]
-                        self.errors_obj.append_errors(mylist)
-                        self.errors_obj.trim_df(data, myerr)
-
-                    if len(data) < 1:
-                        return False
-
-                    if row['Data_Type'][0] == 'money':
-                        minnum = -922337203685477.5808
-                        maxnum = 922337203685477.5807
-                    elif row['Data_Type'][0] == 'smallmoney':
-                        minnum = -214748.3648
-                        maxnum = 214748.3647
-                    elif row['Data_Type'][0] in ['decimal', 'numeric']:
-                        minnum = -10 ** 38 + 1
-                        maxnum = 10 ** 38 - 1
-
-                    if row['Data_Type'][0] in ['money', 'smallmoney', 'decimal', 'numeric']:
                         cleaned_df = pd.DataFrame()
                         cleaned_df[col] = data[col].map(
                             lambda x: None if x < minnum else True)
@@ -266,116 +183,221 @@ class ExcelToSQL:
                         if len(data) < 1:
                             return False
 
-                    cleaned_df = pd.DataFrame()
-                    cleaned_df[col] = data[col].map(
-                        lambda x: None if ('.' in str(x) and len(str(x).split('.')[0]) >
-                                           row['Numeric_Precision'][0]) or ('.' not in str(x) and len(str(x)) >
-                                                                            row['Numeric_Precision'][0]) else True)
-                    myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
+                        cleaned_df = pd.DataFrame()
+                        cleaned_df[col] = data[col].map(
+                            lambda x: None if len(str(x)) > row['Character_Maximum_Length'][0] else True)
+                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
-                    if not myerr.empty:
-                        mylist = [copy.copy(table), copy.copy(myerr),
-                                  'Column {0} has {1} items that exceeds the numeric precision for data type {2}'
-                                      .format(col, len(myerr), row['Data_Type'][0])]
-                        self.errors_obj.append_errors(mylist)
-                        self.errors_obj.trim_df(data, myerr)
+                        if not myerr.empty:
+                            mylist = [copy.copy(table), copy.copy(myerr),
+                                      'Column {0} has {1} items that exceeds the precision size for data type {2}'
+                                          .format(col, len(myerr), row['Data_Type'][0])]
+                            self.errors_obj.append_errors(mylist)
+                            self.errors_obj.trim_df(data, myerr)
 
-                    if len(data) < 1:
-                        return False
+                        if len(data) < 1:
+                            return False
+                    elif row['Data_Type'][0] in ['smalldatetime', 'date', 'datetime', 'datetime2', 'time']:
+                        cleaned_df = pd.DataFrame()
+                        cleaned_df['Date'] = data[col]
+                        cleaned_df['Date'].loc[cleaned_df['Date'].isnull()] = datetime.datetime.now()
+                        cleaned_df['Date'] = pd.to_datetime(cleaned_df['Date'], errors='coerce')
+                        myerr = data.loc[cleaned_df.loc[cleaned_df['Date'].isnull()].index].reset_index()
 
-                    cleaned_df = pd.DataFrame()
-                    cleaned_df[col] = data[col].map(
-                        lambda x: None if ('.' in str(x) and len(str(x).split('.')[1]) >
-                                           row['Numeric_Scale'][0]) or '.' not in str(x) else True)
-                    myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
+                        if not myerr.empty:
+                            mylist = [copy.copy(table), copy.copy(myerr),
+                                      'Column {0} has {1} items that isn''t in date/time format for data type {2}'
+                                          .format(col, len(myerr), row['Data_Type'][0])]
+                            self.errors_obj.append_errors(mylist)
+                            self.errors_obj.trim_df(data, myerr)
 
-                    if not myerr.empty:
-                        mylist = [copy.copy(table), copy.copy(myerr),
-                                  'Column {0} has {1} items that exceeds the numeric scale for data type {2}'
-                                      .format(col, len(myerr), row['Data_Type'][0])]
-                        self.errors_obj.append_errors(mylist)
-                        self.errors_obj.trim_df(data, myerr)
+                        if len(data) < 1:
+                            return False
+                    elif row['Data_Type'][0] in ['money', 'smallmoney', 'numeric', 'decimal', 'float', 'real']:
+                        cleaned_df = pd.DataFrame()
+                        cleaned_df[col] = data[col].map(lambda x: True if is_number(str(x)) else None)
+                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
-                    if len(data) < 1:
-                        return False
+                        if not myerr.empty:
+                            mylist = [copy.copy(table), copy.copy(myerr),
+                                      'Column {0} has {1} items that is not numeric for data type {2}'
+                                          .format(col, len(myerr), row['Data_Type'][0])]
+                            self.errors_obj.append_errors(mylist)
+                            self.errors_obj.trim_df(data, myerr)
 
-                if row['Is_Nullable'][0] == 'NO':
-                    myerr = data.loc[data[col].isnull()].reset_index()
+                        if len(data) < 1:
+                            return False
 
-                    if not myerr.empty:
-                        mylist = [copy.copy(table), copy.copy(myerr),
-                                  'Column {0} has {1} items that are null for data type {2} when null is not allowed'
-                                      .format(col, len(myerr), row['Data_Type'][0])]
-                        self.errors_obj.append_errors(mylist)
-                        self.errors_obj.trim_df(data, myerr)
+                        if row['Data_Type'][0] == 'money':
+                            minnum = -922337203685477.5808
+                            maxnum = 922337203685477.5807
+                        elif row['Data_Type'][0] == 'smallmoney':
+                            minnum = -214748.3648
+                            maxnum = 214748.3647
+                        elif row['Data_Type'][0] in ['decimal', 'numeric']:
+                            minnum = -10 ** 38 + 1
+                            maxnum = 10 ** 38 - 1
 
-                    if len(data) < 1:
-                        return False
-        else:
-            mylist = [copy.copy(table), copy.copy(data),
-                      'Unable to find table {} in INFORMATION_SCHEMA.COLUMNS table'.format(table)]
-            self.errors_obj.append_errors(mylist)
+                        if row['Data_Type'][0] in ['money', 'smallmoney', 'decimal', 'numeric']:
+                            cleaned_df = pd.DataFrame()
+                            cleaned_df[col] = data[col].map(
+                                lambda x: None if x < minnum else True)
+                            myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
-            return False
+                            if not myerr.empty:
+                                mylist = [copy.copy(table), copy.copy(myerr),
+                                          'Column {0} has {1} items that exceeds the minumum number size for data type {2}'
+                                              .format(col, len(myerr), row['Data_Type'][0])]
+                                self.errors_obj.append_errors(mylist)
+                                self.errors_obj.trim_df(data, myerr)
 
-        results = self.asql.query('''
-            SELECT
-                K.COLUMN_NAME
-            
-            FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS C
-            INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS K
-            ON
-                C.TABLE_NAME = K.TABLE_NAME
-                    AND
-                C.CONSTRAINT_CATALOG = K.CONSTRAINT_CATALOG
-                    AND
-                C.CONSTRAINT_SCHEMA = K.CONSTRAINT_SCHEMA
-                    AND
-                C.CONSTRAINT_NAME = K.CONSTRAINT_NAME
-            
-            WHERE
-                K.CONSTRAINT_SCHEMA = '{0}'
-                    AND
-                K.TABLE_NAME = '{1}'
-                    AND
-                C.CONSTRAINT_TYPE = 'PRIMARY KEY'
-        '''.format(table.split('.')[0], table.split('.')[1]))
+                            if len(data) < 1:
+                                return False
 
-        if not results.empty:
-            if self.mode:
+                            cleaned_df = pd.DataFrame()
+                            cleaned_df[col] = data[col].map(
+                                lambda x: None if x > maxnum else True)
+                            myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
+
+                            if not myerr.empty:
+                                mylist = [copy.copy(table), copy.copy(myerr),
+                                          'Column {0} has {1} items that exceeds the maximum number size for data type {2}'
+                                              .format(col, len(myerr), row['Data_Type'][0])]
+                                self.errors_obj.append_errors(mylist)
+                                self.errors_obj.trim_df(data, myerr)
+
+                            if len(data) < 1:
+                                return False
+
+                        cleaned_df = pd.DataFrame()
+                        cleaned_df[col] = data[col].map(
+                            lambda x: None if ('.' in str(x) and len(str(x).split('.')[0]) >
+                                               row['Numeric_Precision'][0]) or ('.' not in str(x) and len(str(x)) >
+                                                                                row['Numeric_Precision'][0]) else True)
+                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
+
+                        if not myerr.empty:
+                            mylist = [copy.copy(table), copy.copy(myerr),
+                                      'Column {0} has {1} items that exceeds the numeric precision for data type {2}'
+                                          .format(col, len(myerr), row['Data_Type'][0])]
+                            self.errors_obj.append_errors(mylist)
+                            self.errors_obj.trim_df(data, myerr)
+
+                        if len(data) < 1:
+                            return False
+
+                        cleaned_df = pd.DataFrame()
+                        cleaned_df[col] = data[col].map(
+                            lambda x: None if ('.' in str(x) and len(str(x).split('.')[1]) >
+                                               row['Numeric_Scale'][0]) or '.' not in str(x) else True)
+                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
+
+                        if not myerr.empty:
+                            mylist = [copy.copy(table), copy.copy(myerr),
+                                      'Column {0} has {1} items that exceeds the numeric scale for data type {2}'
+                                          .format(col, len(myerr), row['Data_Type'][0])]
+                            self.errors_obj.append_errors(mylist)
+                            self.errors_obj.trim_df(data, myerr)
+
+                        if len(data) < 1:
+                            return False
+
+                    if row['Is_Nullable'][0] == 'NO':
+                        myerr = data.loc[data[col].isnull()].reset_index()
+
+                        if not myerr.empty:
+                            mylist = [copy.copy(table), copy.copy(myerr),
+                                      'Column {0} has {1} items that are null for data type {2} when null is not allowed'
+                                          .format(col, len(myerr), row['Data_Type'][0])]
+                            self.errors_obj.append_errors(mylist)
+                            self.errors_obj.trim_df(data, myerr)
+
+                        if len(data) < 1:
+                            return False
+            else:
                 mylist = [copy.copy(table), copy.copy(data),
-                          'Tab {} in excel spreadsheet has a Primary Key when trying to insert records'
+                          'Unable to find table {} in INFORMATION_SCHEMA.COLUMNS table'.format(table)]
+                self.errors_obj.append_errors(mylist)
+
+                return False
+
+            results = self.asql.query('''
+                SELECT
+                    K.COLUMN_NAME
+                
+                FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS C
+                INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS K
+                ON
+                    C.TABLE_NAME = K.TABLE_NAME
+                        AND
+                    C.CONSTRAINT_CATALOG = K.CONSTRAINT_CATALOG
+                        AND
+                    C.CONSTRAINT_SCHEMA = K.CONSTRAINT_SCHEMA
+                        AND
+                    C.CONSTRAINT_NAME = K.CONSTRAINT_NAME
+                
+                WHERE
+                    K.CONSTRAINT_SCHEMA = '{0}'
+                        AND
+                    K.TABLE_NAME = '{1}'
+                        AND
+                    C.CONSTRAINT_TYPE = 'PRIMARY KEY'
+            '''.format(table.split('.')[0], table.split('.')[1]))
+
+            if not results.empty:
+                if self.mode:
+                    mylist = [copy.copy(table), copy.copy(data),
+                              'Tab {} in excel spreadsheet has a Primary Key when trying to insert records'
+                                  .format(table)]
+                    self.errors_obj.append_errors(mylist)
+
+                    return False
+                else:
+                    for pk in results['COLUMN_NAME'].tolist():
+                        if pk in data.columns.tolist():
+                            if not self.primary_key:
+                                self.primary_key = pk
+                            else:
+                                mylist = [copy.copy(table), copy.copy(data),
+                                          'Columns {0} & {1} are Primary Keys. Please list only one Primary Key for tab {2}'
+                                              .format(self.primary_key, pk, table)]
+                                self.errors_obj.append_errors(mylist)
+
+                                return False
+            elif self.mode:
+                return True
+            else:
+                mylist = [copy.copy(table), copy.copy(data),
+                          'Table {} in SQL does not have a Primary Key. Unable to update records'
                               .format(table)]
                 self.errors_obj.append_errors(mylist)
 
                 return False
+
+            if self.primary_key:
+                myerr = data[data[self.primary_key].isnull()]
+
+                if not myerr.empty:
+                    mylist = [copy.copy(table), copy.copy(myerr),
+                              'Primary Key {0} has {1} items that are null ids when null is not allowed'
+                                  .format(self.primary_key, len(myerr))]
+                    self.errors_obj.append_errors(mylist)
+                    self.errors_obj.trim_df(data, myerr)
+
+                if len(data) < 1:
+                    return False
+
+                return True
             else:
-                for pk in results['COLUMN_NAME'].tolist():
-                    if pk in data.columns.tolist():
-                        if not self.primary_key:
-                            self.primary_key = pk
-                        else:
-                            mylist = [copy.copy(table), copy.copy(data),
-                                      'Columns {0} & {1} are Primary Keys. Please list only one Primary Key for tab {2}'
-                                          .format(self.primary_key, pk, table)]
-                            self.errors_obj.append_errors(mylist)
+                mylist = [copy.copy(table), copy.copy(data),
+                          'Tab {0} in excel has no Primary Key in tab. Please add one Primary Key as a column in this tab'
+                              .format(table)]
+                self.errors_obj.append_errors(mylist)
 
-                            return False
-        elif self.mode:
-            return True
+                return False
         else:
             mylist = [copy.copy(table), copy.copy(data),
-                      'Table {} in SQL does not have a Primary Key. Unable to update records'
-                          .format(table)]
-            self.errors_obj.append_errors(mylist)
-
-            return False
-
-        if self.primary_key:
-            return True
-        else:
-            mylist = [copy.copy(table), copy.copy(data),
-                      'Tab {0} in excel has no Primary Key in tab. Please add one Primary Key as a column in this tab'
+                      'Tab {0} in excel has no data. Please add data to this tab'
                           .format(table)]
             self.errors_obj.append_errors(mylist)
 
@@ -562,6 +584,10 @@ def is_number(n, nanoveride=False):
         return True
     else:
         return False
+
+
+def is_digit(n):
+    return any(i.isdigit() for i in n)
 
 
 if __name__ == '__main__':
