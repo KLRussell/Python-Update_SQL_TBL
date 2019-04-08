@@ -524,11 +524,16 @@ class ExcelToSQL:
             sd = win32security.GetFileSecurity(os.fsdecode(file), win32security.OWNER_SECURITY_INFORMATION)
             owner_sid = sd.GetSecurityDescriptorOwner()
             creator, domain, type = win32security.LookupAccountSid(None, owner_sid)
-            splitpath = os.path.split(file)
+
+            if self.mode:
+                new_filename = 'Insert_Error'
+            else:
+                new_filename = 'Update_Error'
+
             filename = '{0}_{1}_{2}{3}'.format(datetime.datetime.now().__format__("%Y%m%d"),
-                                               os.path.splitext(splitpath[1])[0],
+                                               new_filename,
                                                random.randint(10000000, 100000000),
-                                               os.path.splitext(splitpath[1])[1])
+                                               os.path.splitext(os.path.split(file)[1])[1])
 
             Global_Objs['Event_Log'].write_log('Appending errors into {0} ({1}\\{2})'.format(filename,
                                                                                              domain, creator), 'error')
