@@ -1,13 +1,16 @@
 from Global import ShelfHandle
-import os
 from tkinter import *
+
+import os
+import random
+import pandas as pd
 
 CurrDir = os.path.dirname(os.path.abspath(__file__))
 PreserveDir = os.path.join(CurrDir, '04_Preserve')
 ShelfObj = ShelfHandle(os.path.join(PreserveDir, 'Data_Locker'))
 
 
-def populatebox(listbox):
+def populatebox():
     mykeys = ShelfObj.get_keys()
 
     for i in mykeys:
@@ -16,10 +19,25 @@ def populatebox(listbox):
 
 def button1():
     if listbox.curselection():
-        myitems = ShelfObj.grab_item(listbox.get(listbox.curselection()))
+        mylist = []
+        export_dir = os.path.join(PreserveDir, 'Data_Locker_Export')
+        selection = listbox.get(listbox.curselection())
+        myitems = ShelfObj.grab_item(selection)
+        filepath = os.path.join(export_dir, '{0}_Update_{1}.xlsx'.format(
+            selection, random.randint(10000000, 100000000)))
+
+        if os.path.exists(export_dir):
+            os.makedirs(export_dir)
 
         for item in myitems:
-            print(item)
+            with pd.ExcelWriter(filepath) as writer:
+                mylist.append([item[0], item[1], item[3]])
+                item[2].to_excel(writer, sheet_name=item[1])
+
+            df = pd.DataFrame(mylist, columns=['File_Creator_Name', 'Tab_Name', 'Append_Time'])
+            df.to_excel(writer, sheet_name='Append_Details')
+
+        sys.exit()
 
 
 def cancel():
@@ -43,7 +61,7 @@ if __name__ == '__main__':
     text.pack(in_=top)
 
     listbox = Listbox(root, selectmode=SINGLE, width=35, yscrollcommand=True)
-    populatebox(listbox)
+    populatebox()
     listbox.pack(in_=middle)
 
     btn = Button(root, text="Get Shelf", width=10, command=button1)
