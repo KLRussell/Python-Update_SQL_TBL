@@ -587,7 +587,10 @@ def is_number(n, nanoveride=False):
 
 
 def is_digit(n):
-    return any(i.isdigit() for i in n)
+    if n != 'nan':
+        return any(i.isdigit() for i in n)
+    else:
+        return True
 
 
 if __name__ == '__main__':
