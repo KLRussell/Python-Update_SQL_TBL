@@ -7,6 +7,7 @@ import os
 import copy
 import win32security
 import datetime
+import random
 
 CurrDir = os.path.dirname(os.path.abspath(__file__))
 ProcDir = os.path.join(CurrDir, '02_To_Process')
@@ -379,7 +380,7 @@ class ExcelToSQL:
 
             return False
 
-    def update_tbl(self, table, data):
+    def update_tbl(self, file, table, data):
         self.asql.upload(data, 'UT_TMP')
 
         if self.mode:
@@ -427,7 +428,7 @@ class ExcelToSQL:
                     on
                         A.{2} = B.{2}
                 '''.format(self.format_sql_set(data.columns.tolist(), 'B.'), table, self.primary_key))
-                self.shelf_old(table, mydf)
+                self.shelf_old(file, table, mydf)
 
                 self.asql.execute('''
                     update B
@@ -465,17 +466,20 @@ class ExcelToSQL:
         return myreturn
 
     @staticmethod
-    def shelf_old(table, df):
+    def shelf_old(file, table, df):
         if table and not df.empty:
             today = datetime.datetime.now().__format__("%Y%m%d")
+            sd = win32security.GetFileSecurity(os.fsdecode(file), win32security.OWNER_SECURITY_INFORMATION)
+            owner_sid = sd.GetSecurityDescriptorOwner()
+            creator, domain, type = win32security.LookupAccountSid(None, owner_sid)
             mylist = Preserve_Obj.grab_item(today)
 
             if mylist:
                 Preserve_Obj.del_item(today)
-                mylist.append([table, df])
+                mylist.append(['%s\\%s' % (domain, creator), table, df])
                 Preserve_Obj.add_item(today, mylist)
             else:
-                mylist = [[table, df]]
+                mylist = [['%s\\%s' % (domain, creator), table, df]]
                 Preserve_Obj.add_item(today, mylist)
 
     def process_errs(self, file):
@@ -483,20 +487,25 @@ class ExcelToSQL:
 
         if myerrs:
             errmsgs = []
-            # win32security.DACL_SECURITY_INFORMATION
+
             sd = win32security.GetFileSecurity(os.fsdecode(file), win32security.OWNER_SECURITY_INFORMATION)
             owner_sid = sd.GetSecurityDescriptorOwner()
             creator, domain, type = win32security.LookupAccountSid(None, owner_sid)
+            splitpath = os.path.split(file)
+            filename = '{0}_{1}_{2}{3}'.format(datetime.datetime.now().__format__("%Y%m%d"),
+                                               os.path.splitext(splitpath[1])[0],
+                                               random.randint(10000000, 100000000),
+                                               os.path.splitext(splitpath[1])[1])
 
-            Global_Objs['Event_Log'].write_log('Appending errors into {0} ({1})'.format(os.path.basename(file),
+            Global_Objs['Event_Log'].write_log('Appending errors into {0} ({1})'.format(filename,
                                                                                         creator), 'error')
 
-            with pd.ExcelWriter(os.path.join(ErrDir, os.path.basename(file))) as writer:
+            with pd.ExcelWriter(os.path.join(ErrDir, filename)) as writer:
                 for err in myerrs:
                     errmsgs.append(('%s\\%s' % (domain, creator), err[0], err[2]))
                     err[1].to_excel(writer, sheet_name=err[0])
 
-                df = pd.DataFrame(errmsgs, ['File_Creator_Name', 'Tab_Name', 'Errors'])
+                df = pd.DataFrame(errmsgs, columns=['File_Creator_Name', 'Tab_Name', 'Errors'])
                 df.to_excel(writer, sheet_name='Error_Details')
 
     def close_sql(self):
@@ -531,7 +540,7 @@ def process_updates(info):
                     Global_Objs['Event_Log'].write_log('Inserting {0} items into {1}'.format(len(df), tbl))
                 else:
                     Global_Objs['Event_Log'].write_log('Updating {0} items in {1}'.format(len(df), tbl))
-                myobj.update_tbl(tbl, df)
+                myobj.update_tbl(file, tbl, df)
 
             myobj.process_errs(file)
 
