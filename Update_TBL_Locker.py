@@ -1,5 +1,6 @@
 from Global import ShelfHandle
 from tkinter import *
+from tkinter import messagebox
 
 import os
 import random
@@ -26,7 +27,7 @@ def button1():
         filepath = os.path.join(export_dir, '{0}_Update_{1}.xlsx'.format(
             selection, random.randint(10000000, 100000000)))
 
-        if os.path.exists(export_dir):
+        if not os.path.exists(export_dir):
             os.makedirs(export_dir)
 
         for item in myitems:
@@ -34,10 +35,13 @@ def button1():
                 mylist.append([item[0], item[1], item[3]])
                 item[2].to_excel(writer, sheet_name=item[1])
 
-            df = pd.DataFrame(mylist, columns=['File_Creator_Name', 'Tab_Name', 'Append_Time'])
-            df.to_excel(writer, sheet_name='Append_Details')
+                df = pd.DataFrame(mylist, columns=['File_Creator_Name', 'Tab_Name', 'Append_Time'])
+                df.to_excel(writer, sheet_name='Append_Details')
 
         sys.exit()
+
+    else:
+        messagebox.showerror('Selection Error!', 'No shelf date was selected. Please select a valid shelf item')
 
 
 def cancel():
