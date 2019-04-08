@@ -1,16 +1,18 @@
 from Global import ShelfHandle
 import os
+import sys
 from tkinter import *
-import tkinter
 
 CurrDir = os.path.dirname(os.path.abspath(__file__))
 PreserveDir = os.path.join(CurrDir, '04_Preserve')
-listOfCompanies = [[1, ''], [2, '-'], [3, '@ASK TRAINING PTE. LTD.'], [4, 'AAIS'], [5, 'Ademco'], [6, 'Anacle']]
+ShelfObj = ShelfHandle(os.path.join(PreserveDir, 'Data_Locker'))
 
 
-def populatebox(Lb1):
-    for i in listOfCompanies:
-        Lb1.insert("end", i)
+def populatebox(listbox):
+    mykeys = ShelfObj.get_keys()
+
+    for i in mykeys:
+        listbox.insert("end", i)
 
 
 def button1():
@@ -18,13 +20,14 @@ def button1():
 
 
 def cancel():
-    print('exit')
+    sys.exit()
 
 
 if __name__ == '__main__':
     root = Tk()
     var = StringVar()
 
+    root.title('Shelf Locker')
     top = Frame(root)
     middle = Frame(root)
     bottom = Frame(root)
@@ -32,16 +35,16 @@ if __name__ == '__main__':
     middle.pack(side=TOP)
     bottom.pack(side=BOTTOM, fill=BOTH, expand=True)
 
-    text = Message(root, textvariable=var)
+    text = Message(root, textvariable=var, width=180, justify=CENTER)
     var.set('Please choose a date to export Shelved content:')
     text.pack(in_=top)
 
-    Lb1 = Listbox(root, selectmode=SINGLE, yscrollcommand=True)
-    populatebox(Lb1)
-    Lb1.pack(in_=middle)
+    listbox = Listbox(root, selectmode=SINGLE, width=35, yscrollcommand=True)
+    populatebox(listbox)
+    listbox.pack(in_=middle)
 
-    btn = Button(root, text="Get Shelf", command=button1)
-    btn2 = Button(root, text="Cancel", command=cancel)
+    btn = Button(root, text="Get Shelf", width=10, command=button1)
+    btn2 = Button(root, text="Cancel", width=10, command=cancel)
     btn.pack(in_=bottom, side=LEFT)
     btn2.pack(in_=bottom, side=RIGHT)
     root.mainloop()

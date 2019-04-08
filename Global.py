@@ -68,6 +68,18 @@ class ShelfHandle:
     def get_shelf_path(self):
         return self.filepath
 
+    def get_keys(self):
+        mykeys = []
+        sfile = shelve.open(self.filepath)
+        type(sfile)
+
+        for key in sfile.keys():
+            mykeys.append(key)
+
+        sfile.close()
+
+        return mykeys
+
     def grab_item(self, key):
         sfile = shelve.open(self.filepath)
         type(sfile)
