@@ -582,6 +582,8 @@ def process_updates(info):
 
             myobj.process_errs(file)
 
+        os.remove(file)
+
     myobj.close_sql()
     del myobj
 
