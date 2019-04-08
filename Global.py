@@ -21,7 +21,8 @@ def grabobjs(scriptdir, conn_type=None):
             myobjs['Settings'] = ShelfHandle(os.path.join(scriptdir, 'General_Settings'))
         elif len(list(pl.Path(scriptdir).glob('Script_Settings.*'))) > 0:
             myobjs['Local_Settings'] = ShelfHandle(os.path.join(scriptdir, 'Script_Settings'))
-            myobjs['Settings'] = myobjs['Local_Settings'].grab_item('General_Settings_Path')
+            myobjs['Settings'] = ShelfHandle(os.path.join(myobjs['Local_Settings'].grab_item('General_Settings_Path'),
+                                                          'General_Settings'))
         else:
             while not myinput:
                 print("Please input a directory path where to setup general settings at:")
@@ -41,9 +42,9 @@ def grabobjs(scriptdir, conn_type=None):
         myobjs['SQL'] = SQLHandle(myobjs['Settings'])
         myobjs['Errors'] = ErrHandle(myobjs['Event_Log'])
 
-        if myinput and conn_type:
-            myobjs['SQL'].connect(conn_type)
-            myobjs['SQL'].close()
+        # if myinput and conn_type:
+        myobjs['SQL'].connect(conn_type)
+        myobjs['SQL'].close()
 
         return myobjs
     else:
@@ -53,7 +54,7 @@ def grabobjs(scriptdir, conn_type=None):
 class ShelfHandle:
     def __init__(self, filepath=None):
         if os.path.exists(os.path.split(filepath)[0]):
-            self.filepath = os.path.abspath(filepath)
+            self.filepath = filepath
             sfile = shelve.open(filepath)
             type(sfile)
             sfile.close()
@@ -223,10 +224,16 @@ class SQLHandle:
     def conn_chk(self):
         exit_loop = False
 
-        while exit_loop:
+        while not exit_loop:
             self.val_settings()
             myquery = "SELECT 1 from sys.sysprocesses"
-            self.connect()
+
+            if self.conn_type == 'alch':
+                self.engine = mysql.create_engine(self.conn_str)
+            else:
+                self.conn = pyodbc.connect(self.conn_str)
+                self.cursor = self.conn.cursor()
+                self.conn.commit()
 
             try:
                 if self.conn_type == 'alch':
