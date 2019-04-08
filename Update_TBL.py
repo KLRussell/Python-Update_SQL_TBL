@@ -316,12 +316,10 @@ class ExcelToSQL:
                             return False
 
                 if 'edit_dt' in (col.lower() for col in results.columns.tolist())\
-                        and 'edit_date' not in (col.lower() for col in data.columns.tolist())\
-                        and 'edit_dt' not in (col.lower() for col in data.columns.tolist()):
+                        and ('edit_date', 'edit_dt') not in (col.lower() for col in data.columns.tolist()):
                     data['Edit_DT'] = datetime.datetime.now()
                 elif 'edit_date' in (col.lower() for col in results.columns.tolist())\
-                        and 'edit_date' not in (col.lower() for col in data.columns.tolist())\
-                        and 'edit_dt' not in (col.lower() for col in data.columns.tolist()):
+                        and ('edit_date', 'edit_dt') not in (col.lower() for col in data.columns.tolist()):
                     data['Edit_Date'] = datetime.datetime.now()
             else:
                 mylist = [copy.copy(table), copy.copy(data),
