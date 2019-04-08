@@ -497,8 +497,8 @@ class ExcelToSQL:
                                                random.randint(10000000, 100000000),
                                                os.path.splitext(splitpath[1])[1])
 
-            Global_Objs['Event_Log'].write_log('Appending errors into {0} ({1})'.format(filename,
-                                                                                        creator), 'error')
+            Global_Objs['Event_Log'].write_log('Appending errors into {0} ({1}\\{2})'.format(filename,
+                                                                                             domain, creator), 'error')
 
             with pd.ExcelWriter(os.path.join(ErrDir, filename)) as writer:
                 for err in myerrs:
