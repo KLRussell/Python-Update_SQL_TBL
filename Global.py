@@ -393,17 +393,17 @@ class ErrHandle:
                 return pd.concat(dfs, ignore_index=True, sort=False).drop_duplicates().reset_index(drop=True)
 
     def append_errors(self, err_items, key=None):
-        if type(err_items) == 'list' and not err_items:
+        if isinstance(err_items, list) and len(err_items) > 0:
             self.logobj.write_log('Error(s) found. Appending to virtual list', 'warning')
 
             if key and key in self.errors.keys():
                 self.errors[key] = self.errors[key].append(err_items)
             elif key:
-                self.errors[key] = [].append(err_items)
+                self.errors[key] = [err_items]
             elif 'default' in self.errors.keys():
                 self.errors['default'] = self.errors['default'].append(err_items)
             else:
-                self.errors['default'] = [].append(err_items)
+                self.errors['default'] = [err_items]
 
     def grab_errors(self, key=None):
         if key and key in self.errors.keys():

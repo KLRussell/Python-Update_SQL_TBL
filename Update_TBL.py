@@ -427,7 +427,7 @@ class ExcelToSQL:
                     on
                         A.{2} = B.{2}
                 '''.format(self.format_sql_set(data.columns.tolist(), 'B.'), table, self.primary_key))
-                self.shelf_old(mydf)
+                self.shelf_old(table, mydf)
 
                 self.asql.execute('''
                     update B
@@ -465,17 +465,17 @@ class ExcelToSQL:
         return myreturn
 
     @staticmethod
-    def shelf_old(df):
-        if not df.empty:
+    def shelf_old(table, df):
+        if table and not df.empty:
             today = datetime.datetime.now().__format__("%Y%m%d")
             mylist = Preserve_Obj.grab_item(today)
 
             if mylist:
                 Preserve_Obj.del_item(today)
-                mylist.append(df)
+                mylist.append([table, df])
                 Preserve_Obj.add_item(today, mylist)
             else:
-                mylist = [df]
+                mylist = [[table, df]]
                 Preserve_Obj.add_item(today, mylist)
 
     def process_errs(self, file):
@@ -519,7 +519,6 @@ def process_updates(info):
 
     for file in info[0]:
         Global_Objs['Event_Log'].write_log('Processing file {}'.format(os.path.basename(file)))
-        print(file)
         xls_file = pd.ExcelFile(file)
 
         for tbl in xls_file.sheet_names:
@@ -532,7 +531,8 @@ def process_updates(info):
                 else:
                     Global_Objs['Event_Log'].write_log('Updating {0} items in {1}'.format(len(df), tbl))
                 myobj.update_tbl(tbl, df)
-                myobj.process_errs(file)
+
+            myobj.process_errs(file)
 
     myobj.close_sql()
     del myobj
