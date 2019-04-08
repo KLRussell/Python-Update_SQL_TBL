@@ -314,6 +314,13 @@ class ExcelToSQL:
 
                         if len(data) < 1:
                             return False
+
+                if 'Edit_DT' in results.columns.tolist() and 'Edit_Date' not in data.columns.tolist()\
+                        and 'Edit_DT' not in data.columns.tolist():
+                    data['Edit_DT'] = datetime.datetime.now()
+                elif 'Edit_Date' in results.columns.tolist() and 'Edit_Date' not in data.columns.tolist()\
+                        and 'Edit_DT' not in data.columns.tolist():
+                    data['Edit_DT'] = datetime.datetime.now()
             else:
                 mylist = [copy.copy(table), copy.copy(data),
                           'Unable to find table {} in INFORMATION_SCHEMA.COLUMNS table'.format(table)]
