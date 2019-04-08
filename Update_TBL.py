@@ -89,7 +89,7 @@ class ExcelToSQL:
 
                     cleaned_df = pd.DataFrame()
                     cleaned_df[col] = data[col].map(
-                        lambda x: None if len(str(x)) > int(row['Character_Maximum_Length'][0]) else x)
+                        lambda x: None if len(str(x)) > int(row['Character_Maximum_Length'][0]) else True)
                     myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
                     if not myerr.empty:
@@ -154,7 +154,7 @@ class ExcelToSQL:
 
                     cleaned_df = pd.DataFrame()
                     cleaned_df[col] = data[col].map(
-                        lambda x: True if x < minnum else None)
+                        lambda x: None if x < minnum else True)
                     myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
                     if not myerr.empty:
@@ -169,7 +169,7 @@ class ExcelToSQL:
 
                     cleaned_df = pd.DataFrame()
                     cleaned_df[col] = data[col].map(
-                        lambda x: True if x > maxnum else None)
+                        lambda x: None if x > maxnum else True)
                     myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
                     if not myerr.empty:
@@ -184,7 +184,7 @@ class ExcelToSQL:
 
                     cleaned_df = pd.DataFrame()
                     cleaned_df[col] = data[col].map(
-                        lambda x: True if len(str(x)) > row['Character_Maximum_Length'][0] else None)
+                        lambda x: None if len(str(x)) > row['Character_Maximum_Length'][0] else True)
                     myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
                     if not myerr.empty:
@@ -238,7 +238,7 @@ class ExcelToSQL:
                     if row['Data_Type'][0] in ['money', 'smallmoney', 'decimal', 'numeric']:
                         cleaned_df = pd.DataFrame()
                         cleaned_df[col] = data[col].map(
-                            lambda x: True if x < minnum else None)
+                            lambda x: None if x < minnum else True)
                         myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
                         if not myerr.empty:
@@ -253,7 +253,7 @@ class ExcelToSQL:
 
                         cleaned_df = pd.DataFrame()
                         cleaned_df[col] = data[col].map(
-                            lambda x: True if x > maxnum else None)
+                            lambda x: None if x > maxnum else True)
                         myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
                         if not myerr.empty:
@@ -268,9 +268,9 @@ class ExcelToSQL:
 
                     cleaned_df = pd.DataFrame()
                     cleaned_df[col] = data[col].map(
-                        lambda x: True if ('.' in str(x) and len(str(x).split('.')[0]) >
+                        lambda x: None if ('.' in str(x) and len(str(x).split('.')[0]) >
                                            row['Numeric_Precision'][0]) or ('.' not in str(x) and len(str(x)) >
-                                                                            row['Numeric_Precision'][0]) else None)
+                                                                            row['Numeric_Precision'][0]) else True)
                     myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
                     if not myerr.empty:
@@ -285,8 +285,8 @@ class ExcelToSQL:
 
                     cleaned_df = pd.DataFrame()
                     cleaned_df[col] = data[col].map(
-                        lambda x: True if ('.' in str(x) and len(str(x).split('.')[1]) >
-                                           row['Numeric_Scale'][0]) or '.' not in str(x) else None)
+                        lambda x: None if ('.' in str(x) and len(str(x).split('.')[1]) >
+                                           row['Numeric_Scale'][0]) or '.' not in str(x) else True)
                     myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
                     if not myerr.empty:
