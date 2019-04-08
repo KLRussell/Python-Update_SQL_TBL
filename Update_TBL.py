@@ -85,10 +85,11 @@ class ExcelToSQL:
                     return False
                 elif row['Data_Type'][0] in ['xml', 'text', 'varchar', 'nvarchar', 'uniqueidentifier', 'nchar',
                                              'geography', 'char', 'ntext'] and \
-                        str(row['Character_Maximum_Length'][0]).isnumeric():
+                        is_number(str(row['Character_Maximum_Length'][0]), True):
+
                     cleaned_df = pd.DataFrame()
                     cleaned_df[col] = data[col].map(
-                        lambda x: True if len(str(x)) > row['Character_Maximum_Length'][0] else False)
+                        lambda x: None if len(str(x)) > int(row['Character_Maximum_Length'][0]) else x)
                     myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
                     if not myerr.empty:
@@ -102,7 +103,7 @@ class ExcelToSQL:
                         return False
                 elif row['Data_Type'][0] in ['varbinary', 'binary', 'bit', 'int', 'tinyint', 'smallint', 'bigint']:
                     cleaned_df = pd.DataFrame()
-                    cleaned_df[col] = data[col].map(lambda x: True if str(x).isnumeric() else False)
+                    cleaned_df[col] = data[col].map(lambda x: True if is_number(str(x)) else None)
                     myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
                     if not myerr.empty:
@@ -116,7 +117,7 @@ class ExcelToSQL:
                         return False
 
                     cleaned_df = pd.DataFrame()
-                    cleaned_df[col] = data[col].map(lambda x: True if str(x).isdigit() else False)
+                    cleaned_df[col] = data[col].map(lambda x: True if str(x).isdigit() else None)
                     myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
                     if not myerr.empty:
@@ -153,7 +154,7 @@ class ExcelToSQL:
 
                     cleaned_df = pd.DataFrame()
                     cleaned_df[col] = data[col].map(
-                        lambda x: True if x < minnum else False)
+                        lambda x: True if x < minnum else None)
                     myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
                     if not myerr.empty:
@@ -168,7 +169,7 @@ class ExcelToSQL:
 
                     cleaned_df = pd.DataFrame()
                     cleaned_df[col] = data[col].map(
-                        lambda x: True if x > maxnum else False)
+                        lambda x: True if x > maxnum else None)
                     myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
                     if not myerr.empty:
@@ -183,7 +184,7 @@ class ExcelToSQL:
 
                     cleaned_df = pd.DataFrame()
                     cleaned_df[col] = data[col].map(
-                        lambda x: True if len(str(x)) > row['Character_Maximum_Length'][0] else False)
+                        lambda x: True if len(str(x)) > row['Character_Maximum_Length'][0] else None)
                     myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
                     if not myerr.empty:
@@ -211,7 +212,7 @@ class ExcelToSQL:
                         return False
                 elif row['Data_Type'][0] in ['money', 'smallmoney', 'numeric', 'decimal', 'float', 'real']:
                     cleaned_df = pd.DataFrame()
-                    cleaned_df[col] = data[col].map(lambda x: True if str(x).isnumeric() else False)
+                    cleaned_df[col] = data[col].map(lambda x: True if is_number(str(x)) else None)
                     myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
                     if not myerr.empty:
@@ -237,7 +238,7 @@ class ExcelToSQL:
                     if row['Data_Type'][0] in ['money', 'smallmoney', 'decimal', 'numeric']:
                         cleaned_df = pd.DataFrame()
                         cleaned_df[col] = data[col].map(
-                            lambda x: True if x < minnum else False)
+                            lambda x: True if x < minnum else None)
                         myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
                         if not myerr.empty:
@@ -252,7 +253,7 @@ class ExcelToSQL:
 
                         cleaned_df = pd.DataFrame()
                         cleaned_df[col] = data[col].map(
-                            lambda x: True if x > maxnum else False)
+                            lambda x: True if x > maxnum else None)
                         myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
                         if not myerr.empty:
@@ -269,7 +270,7 @@ class ExcelToSQL:
                     cleaned_df[col] = data[col].map(
                         lambda x: True if ('.' in str(x) and len(str(x).split('.')[0]) >
                                            row['Numeric_Precision'][0]) or ('.' not in str(x) and len(str(x)) >
-                                                                            row['Numeric_Precision'][0]) else False)
+                                                                            row['Numeric_Precision'][0]) else None)
                     myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
                     if not myerr.empty:
@@ -285,7 +286,7 @@ class ExcelToSQL:
                     cleaned_df = pd.DataFrame()
                     cleaned_df[col] = data[col].map(
                         lambda x: True if ('.' in str(x) and len(str(x).split('.')[1]) >
-                                           row['Numeric_Scale'][0]) or '.' not in str(x) else False)
+                                           row['Numeric_Scale'][0]) or '.' not in str(x) else None)
                     myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
 
                     if not myerr.empty:
@@ -549,6 +550,18 @@ def process_updates(info):
 
     myobj.close_sql()
     del myobj
+
+
+def is_number(n, nanoveride=False):
+    if (n and n != 'nan') or (not nanoveride):
+        try:
+            float(n)
+
+        except ValueError:
+            return False
+        return True
+    else:
+        return False
 
 
 if __name__ == '__main__':

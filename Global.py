@@ -135,7 +135,7 @@ class ShelfHandle:
         sfile.close()
 
     def add_list(self, dict_list):
-        if len(dict_list) > 0 and type(dict_list) == 'dict':
+        if len(dict_list) > 0 and isinstance(dict_list, dict):
             sfile = shelve.open(self.filepath)
             type(sfile)
 
@@ -376,17 +376,17 @@ class ErrHandle:
 
     @staticmethod
     def trim_df(df_to_trim, df_to_compare):
-        if type(df_to_trim) == 'DataFrame' and type(df_to_compare) == 'DataFrame' and not df_to_trim.empty\
-                and not df_to_compare.empty:
+        if isinstance(df_to_trim, pd.DataFrame) and isinstance(df_to_compare, pd.DataFrame)\
+                and not df_to_trim.empty and not df_to_compare.empty:
             df_to_trim.drop(df_to_compare.index, inplace=True)
 
     @staticmethod
     def concat_dfs(df_list):
-        if type(df_list) == 'list' and len(df_list) > 0:
+        if isinstance(df_list, list) and len(df_list) > 0:
             dfs = []
 
             for df in df_list:
-                if type(df) == 'DataFrame':
+                if isinstance(df, pd.DataFrame):
                     dfs.append(df)
 
             if len(dfs) > 0:
@@ -397,11 +397,11 @@ class ErrHandle:
             self.logobj.write_log('Error(s) found. Appending to virtual list', 'warning')
 
             if key and key in self.errors.keys():
-                self.errors[key] = self.errors[key].append(err_items)
+                self.errors[key].append(err_items)
             elif key:
                 self.errors[key] = [err_items]
             elif 'default' in self.errors.keys():
-                self.errors['default'] = self.errors['default'].append(err_items)
+                self.errors['default'].append(err_items)
             else:
                 self.errors['default'] = [err_items]
 
