@@ -44,14 +44,17 @@ SETUP:
 
 HOW IT WORKS:
 	- Format excel spreadsheet into the following format:
-		* Filename should start with either 'Insert_' or 'Update_'
+		* Filename can be whatever
 
-		* Tab must be named as [schema].[table name] (File can have multiple tabs)
+		* Cell A1 must have [schema].[table name]
 
-		* First row must have one primary key and the column names of what you plan to update
+		* Tab must be named as Update_* or Insert_* (File can have multiple tabs)
+
+		* Second row must have column names from SQL table. Primary Key must be included if your
+		updating
 
 		* Remaining cells below the column names is either the id of the primary key or new data
-		that replaces the old data in SQL
+		that replaces the old data/inserts data in SQL
 
 	- Place excel spreadsheet into '02_Process'
 
@@ -64,5 +67,5 @@ GRAB FROM PRESERVE LOCKER:
 
 	- Data will be exported into the '04_Preserve\Data_Locker_Export' directory of your script directory
 
-	- Tab 'Append_Details' show details of each tab for that day in the Locker
+	- Tab 'TAB_Details' show details of each tab for that day in the Locker
 
