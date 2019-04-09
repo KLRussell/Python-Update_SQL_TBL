@@ -38,7 +38,7 @@ def button1():
 
                 df = pd.DataFrame(mylist, columns=['File_Creator_Name', 'Tab_Name', 'SQL_Table', 'Append_Time'])
                 df.to_excel(writer, sheet_name='TAB_Details')
-                
+
             num += 1
 
         sys.exit()
