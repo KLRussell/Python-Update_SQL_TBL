@@ -26,6 +26,8 @@ with the current datetime.
 
 - A secondary script will export items from locker into an excel spreadsheet
 
+- An excel vba spreadsheet is included to help users create excel worksheet templates for this python project
+
 
 INSTALLATION:
 	- Global.py can be placed in one of the PYTHONPATH directories
