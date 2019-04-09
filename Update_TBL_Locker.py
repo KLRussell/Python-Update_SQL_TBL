@@ -24,19 +24,22 @@ def button1():
         export_dir = os.path.join(PreserveDir, 'Data_Locker_Export')
         selection = listbox.get(listbox.curselection())
         myitems = ShelfObj.grab_item(selection)
-        filepath = os.path.join(export_dir, '{0}_Update_{1}.xlsx'.format(
+        filepath = os.path.join(export_dir, '{0}_{1}.xlsx'.format(
             selection, random.randint(10000000, 100000000)))
 
         if not os.path.exists(export_dir):
             os.makedirs(export_dir)
 
+        num = 1
         for item in myitems:
             with pd.ExcelWriter(filepath) as writer:
-                mylist.append([item[0], item[1], item[3]])
-                item[2].to_excel(writer, sheet_name=item[1])
+                mylist.append([item[0], item[1] + '_' + str(num), item[2], item[4]])
+                item[3].to_excel(writer, sheet_name=item[1] + '_' + str(num))
 
-                df = pd.DataFrame(mylist, columns=['File_Creator_Name', 'Tab_Name', 'Append_Time'])
-                df.to_excel(writer, sheet_name='Append_Details')
+                df = pd.DataFrame(mylist, columns=['File_Creator_Name', 'Tab_Name', 'SQL_Table', 'Append_Time'])
+                df.to_excel(writer, sheet_name='TAB_Details')
+                
+            num += 1
 
         sys.exit()
 
