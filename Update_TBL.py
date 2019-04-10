@@ -98,7 +98,8 @@ class ExcelToSQL:
                         return False
                     elif row['Data_Type'][0] in ['xml', 'text', 'varchar', 'nvarchar', 'uniqueidentifier', 'nchar',
                                                  'geography', 'char', 'ntext'] and \
-                            is_number(str(row['Character_Maximum_Length'][0]), True):
+                            is_number(str(row['Character_Maximum_Length'][0]), True)\
+                            and row['Character_Maximum_Length'][0] > 0:
 
                         cleaned_df = pd.DataFrame()
                         cleaned_df[col] = data[col].map(
