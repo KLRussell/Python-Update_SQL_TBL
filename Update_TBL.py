@@ -13,7 +13,7 @@ CurrDir = os.path.dirname(os.path.abspath(__file__))
 ProcDir = os.path.join(CurrDir, '02_To_Process')
 ErrDir = os.path.join(CurrDir, '03_Errors')
 PreserveDir = os.path.join(CurrDir, '04_Preserve')
-Global_Objs = grabobjs(CurrDir, 'alch')
+Global_Objs = grabobjs(CurrDir)
 Preserve_Obj = None
 
 
@@ -623,6 +623,9 @@ if __name__ == '__main__':
 
     if not os.path.exists(PreserveDir):
         os.makedirs(PreserveDir)
+
+    Global_Objs['SQL'].connect('alch')
+    Global_Objs['SQL'].close()
 
     Preserve_Obj = ShelfHandle(os.path.join(PreserveDir, 'Data_Locker'))
     has_updates = check_for_updates()

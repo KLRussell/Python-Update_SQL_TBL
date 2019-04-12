@@ -12,7 +12,7 @@ import datetime
 import logging
 
 
-def grabobjs(scriptdir, conn_type=None):
+def grabobjs(scriptdir):
     if scriptdir and os.path.exists(scriptdir):
         myobjs = dict()
         myinput = None
@@ -41,10 +41,6 @@ def grabobjs(scriptdir, conn_type=None):
         myobjs['Event_Log'] = LogHandle(scriptdir)
         myobjs['SQL'] = SQLHandle(myobjs['Settings'])
         myobjs['Errors'] = ErrHandle(myobjs['Event_Log'])
-
-        # if myinput and conn_type:
-        myobjs['SQL'].connect(conn_type)
-        myobjs['SQL'].close()
 
         return myobjs
     else:
@@ -213,6 +209,9 @@ class SQLHandle:
         elif self.conn_type == 'sql':
             self.conn_str = 'driver={0};server={1};database={2};autocommit=True;Trusted_Connection=yes'\
                 .format('{SQL Server}', server, database)
+        elif self.conn_type == 'accdb':
+            self.conn_str = 'DRIVER={};DBQ={};Exclusive=1'.format('{Microsoft Access Driver (*.mdb, *.accdb)}',
+                                                                  self.accdb_file)
         elif self.conn_type == 'dsn':
             self.conn_str = 'DSN={};DATABASE=default;Trusted_Connection=Yes;'.format(dsn)
         else:
@@ -220,18 +219,25 @@ class SQLHandle:
 
     def val_settings(self):
         if self.conn_type in ['alch', 'sql']:
-            if not self.settingsobj.grab_item('Server') and not self.settingsobj.grab_item('Database'):
-                self.settingsobj.add_item('Server', inputmsg='Please input Server to store in settings:')
-                self.settingsobj.add_item('Database', inputmsg='Please input Database name to store in settings:')
+            if self.server and self.database:
+                self.create_conn_str(server=self.server, database=self.database)
+            else:
+                if not self.settingsobj.grab_item('Server') and not self.settingsobj.grab_item('Database'):
+                    self.settingsobj.add_item('Server', inputmsg='Please input Server to store in settings:')
+                    self.settingsobj.add_item('Database', inputmsg='Please input Database name to store in settings:')
 
-            self.create_conn_str(server=self.settingsobj.grab_item('Server')
-                                 , database=self.settingsobj.grab_item('Database'))
-
+                self.create_conn_str(server=self.settingsobj.grab_item('Server')
+                                     , database=self.settingsobj.grab_item('Database'))
         elif self.conn_type == 'dsn':
-            if not self.settingsobj.grab_item('DSN'):
-                self.settingsobj.add_item('DSN', inputmsg='Please input DSN name to store in settings:')
+            if self.dsn:
+                self.create_conn_str(dsn=self.dsn)
+            else:
+                if not self.settingsobj.grab_item('DSN'):
+                    self.settingsobj.add_item('DSN', inputmsg='Please input DSN name to store in settings:')
 
-            self.create_conn_str(dsn=self.settingsobj.grab_item('DSN'))
+                self.create_conn_str(dsn=self.settingsobj.grab_item('DSN'))
+        else:
+            self.create_conn_str()
 
     def conn_chk(self):
         exit_loop = False
@@ -254,38 +260,89 @@ class SQLHandle:
                     if obj._saved_cursor.arraysize > 0:
                         exit_loop = True
                     else:
-                        self.settingsobj.del_item('Server')
-                        self.settingsobj.del_item('Database')
+                        if self.server:
+                            self.server = None
+                        if self.database:
+                            self.database = None
+                        if self.settingsobj.grab_item('Server'):
+                            self.settingsobj.del_item('Server')
+                        if self.settingsobj.grab_item('Database'):
+                            self.settingsobj.del_item('Database')
                         print('Error! Server & Database combination are incorrect!')
+                elif self.conn_type == 'accdb':
+                    if len(self.get_accdb_tables()) > 0:
+                        exit_loop = True
+                    else:
+                        if self.accdb_file:
+                            self.accdb_file = None
 
+                        print('Error! Accdb is incorrect!')
                 else:
                     df = sql.read_sql(myquery, self.conn)
+
                     if len(df) > 0:
                         exit_loop = True
                     else:
                         if self.conn_type == 'sql':
-                            self.settingsobj.del_item('Server')
-                            self.settingsobj.del_item('Database')
+                            if self.server:
+                                self.server = None
+                            if self.database:
+                                self.database = None
+                            if self.settingsobj.grab_item('Server'):
+                                self.settingsobj.del_item('Server')
+                            if self.settingsobj.grab_item('Database'):
+                                self.settingsobj.del_item('Database')
                             print('Error! Server & Database combination are incorrect!')
                         else:
-                            self.settingsobj.del_item('DSN')
+                            if self.dsn:
+                                self.dsn = None
+                            if self.settingsobj.grab_item('DSN'):
+                                self.settingsobj.del_item('DSN')
+
                             print('Error! DSN is incorrect!')
 
                 self.close()
 
             except ValueError as a:
                 if self.conn_type in ['alch', 'sql']:
-                    self.settingsobj.del_item('Server')
-                    self.settingsobj.del_item('Database')
+                    if self.server:
+                        self.server = None
+                    if self.database:
+                        self.database = None
+                    if self.settingsobj.grab_item('Server'):
+                        self.settingsobj.del_item('Server')
+                    if self.settingsobj.grab_item('Database'):
+                        self.settingsobj.del_item('Database')
                     print('Error! Server & Database combination are incorrect!')
                 else:
-                    self.settingsobj.del_item('DSN')
+                    if self.dsn:
+                        self.dsn = None
+                    if self.settingsobj.grab_item('DSN'):
+                        self.settingsobj.del_item('DSN')
+                    if self.accdb_file:
+                        self.accdb_file = None
+
                     print('Error! DSN is incorrect!')
 
                 self.close()
 
-    def connect(self, conn_type):
+    def get_accdb_tables(self):
+        if self.conn_type == 'accdb':
+            mylist = []
+            ct = self.cursor.tables
+
+            for row in ct():
+                if 'msys' not in row.table_name.lower():
+                    mylist.append(row.table_name)
+
+            return mylist
+
+    def connect(self, conn_type, server=None, database=None, dsn=None, accdb_file=None):
         self.conn_type = conn_type
+        self.server = server
+        self.database = database
+        self.dsn = dsn
+        self.accdb_file = accdb_file
         self.conn_chk()
 
         if self.conn_type == 'alch':
@@ -323,7 +380,7 @@ class SQLHandle:
         else:
             return [self.cursor, self.conn]
 
-    def upload(self, dataframe, sqltable):
+    def upload(self, dataframe, sqltable, index=True, index_label='linenumber'):
         if self.conn_type == 'alch' and not self.session:
             mytbl = sqltable.split(".")
 
@@ -333,8 +390,8 @@ class SQLHandle:
                     self.engine,
                     schema=mytbl[0],
                     if_exists='append',
-                    index=True,
-                    index_label='linenumber',
+                    index=index,
+                    index_label=index_label,
                     chunksize=1000
                 )
             else:
