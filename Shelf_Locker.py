@@ -173,7 +173,7 @@ class SettingsGUI:
         if self.entry1.get() in self.local_settings:
             Global_Objs['Local_Settings'].del_item(self.entry1.get())
 
-        if self.rvar.get() != '1' or self.entry2.get() != '14':
+        if self.rvar.get() != 1 or self.entry2.get() != '14':
             Global_Objs['Local_Settings'].add_item(self.entry1.get(), myitems)
 
         self.dialog.destroy()
