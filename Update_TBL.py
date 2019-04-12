@@ -595,7 +595,10 @@ def trim_preserve():
             if shelf_key < mydate.__format__("%Y%m%d"):
                 shelf_items.remove(sub_shelf_item)
 
-    print(mylocker)
+        mylocker[shelf_key] = shelf_items
+
+    Preserve_Obj.empty_list()
+    Preserve_Obj.add_list(mylocker)
 
 
 def check_for_updates():
