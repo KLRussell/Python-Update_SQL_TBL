@@ -15,6 +15,7 @@ Global_Objs = grabobjs(CurrDir)
 
 class MainGUI:
     listbox = None
+    obj = None
 
     def __init__(self):
         self.root = Tk()
@@ -84,10 +85,16 @@ class MainGUI:
             messagebox.showerror('Selection Error!', 'No shelf date was selected. Please select a valid shelf item')
 
     def settings(self):
-        obj = SettingsGUI(self.root)
-        obj.buildgui()
+        if self.obj:
+            self.obj.close()
+
+        self.obj = SettingsGUI(self.root)
+        self.obj.buildgui()
 
     def cancel(self):
+        if self.obj:
+            self.obj.close()
+
         self.root.destroy()
 
 
@@ -99,7 +106,8 @@ class SettingsGUI:
 
     def __init__(self, root):
         self.dialog = Toplevel(root)
-        self.rvar = self.rvar = IntVar()
+        self.rvar = IntVar()
+        self.evar = StringVar()
         self.local_settings = Global_Objs['Local_Settings'].grab_list()
 
     def buildgui(self):
@@ -139,7 +147,7 @@ class SettingsGUI:
         self.entry2.insert(0, "14")
 
         btn = Button(self.dialog, text="Save Settings", width=10, command=self.save_settings)
-        btn2 = Button(self.dialog, text="Cancel", width=10, command=self.cancel)
+        btn2 = Button(self.dialog, text="Cancel", width=10, command=self.close)
         btn.pack(in_=bottom_frame, side=LEFT, padx=10)
         btn2.pack(in_=bottom_frame, side=RIGHT, padx=10)
         self.dialog.mainloop()
@@ -153,10 +161,11 @@ class SettingsGUI:
             else:
                 self.radio2.select()
 
+            self.entry2.delete(0, len(self.entry2.get()))
             self.entry2.insert(0, myitems[1])
 
     def save_settings(self):
-        if self.rvar.get() == '1':
+        if self.rvar.get() == 1:
             myitems = [True, self.entry2.get()]
         else:
             myitems = [False, self.entry2.get()]
@@ -169,7 +178,7 @@ class SettingsGUI:
 
         self.dialog.destroy()
 
-    def cancel(self):
+    def close(self):
         self.dialog.destroy()
 
 
