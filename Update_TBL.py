@@ -552,7 +552,8 @@ class ExcelToSQL:
             with pd.ExcelWriter(os.path.join(ErrDir, filename)) as writer:
                 for err in myerrs:
                     errmsgs.append(('%s\\%s' % (domain, creator), err[0], err[1], err[3]))
-                    err[2].to_excel(writer, sheet_name=err[0])
+                    pd.DataFrame([err[1]]).to_excel(writer, index=False, header=False, sheet_name=err[0])
+                    err[2].to_excel(writer, index=False, startrow=1, sheet_name=err[0])
 
                 df = pd.DataFrame(errmsgs, columns=['File_Creator_Name', 'Tab_Name', 'SQL Table', 'Error Desc'])
                 df.to_excel(writer, sheet_name='Error_Details')

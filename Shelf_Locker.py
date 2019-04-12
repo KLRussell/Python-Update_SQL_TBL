@@ -70,14 +70,15 @@ class MainGUI:
 
             with pd.ExcelWriter(filepath) as writer:
                 for item in myitems:
-                    print(item)
                     mylist.append([item[0], item[1] + '_' + str(num), item[2], item[4]])
-                    item[3].to_excel(writer, sheet_name=item[1] + '_' + str(num))
+                    pd.DataFrame([item[2]]).to_excel(writer, index=False, header=False,
+                                                     sheet_name=item[1] + '_' + str(num))
+                    item[3].to_excel(writer, index=False, startrow=1, sheet_name=item[1] + '_' + str(num))
 
                     num += 1
 
                 df = pd.DataFrame(mylist, columns=['File_Creator_Name', 'Tab_Name', 'SQL_Table', 'Append_Time'])
-                df.to_excel(writer, sheet_name='TAB_Details')
+                df.to_excel(writer, index=False, sheet_name='TAB_Details')
 
             sys.exit()
 
