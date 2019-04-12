@@ -88,7 +88,7 @@ class ExcelToSQL:
 
             if not results.empty:
                 for col in data.columns.tolist():
-                    row = results.loc[results['Column_Name'] == col].reset_index()
+                    row = results.loc[results['Column_Name'] == col].reset_index(drop=True)
 
                     if row.empty:
                         mylist = [copy.copy(tab), copy.copy(table), copy.copy(data),
@@ -104,7 +104,7 @@ class ExcelToSQL:
                         cleaned_df = pd.DataFrame()
                         cleaned_df[col] = data[col].map(
                             lambda x: None if len(str(x)) > int(row['Character_Maximum_Length'][0]) else True)
-                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
+                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index(drop=True)
 
                         if not myerr.empty:
                             mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr),
@@ -118,7 +118,7 @@ class ExcelToSQL:
                     elif row['Data_Type'][0] in ['varbinary', 'binary', 'bit', 'int', 'tinyint', 'smallint', 'bigint']:
                         cleaned_df = pd.DataFrame()
                         cleaned_df[col] = data[col].map(lambda x: True if is_number(str(x)) else None)
-                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
+                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index(drop=True)
 
                         if not myerr.empty:
                             mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr),
@@ -132,7 +132,7 @@ class ExcelToSQL:
 
                         cleaned_df = pd.DataFrame()
                         cleaned_df[col] = data[col].map(lambda x: True if is_digit(str(x)) else None)
-                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
+                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index(drop=True)
 
                         if not myerr.empty:
                             mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr),
@@ -169,7 +169,7 @@ class ExcelToSQL:
                         cleaned_df = pd.DataFrame()
                         cleaned_df[col] = data[col].map(
                             lambda x: None if x < minnum else True)
-                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
+                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index(drop=True)
 
                         if not myerr.empty:
                             mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr),
@@ -184,7 +184,7 @@ class ExcelToSQL:
                         cleaned_df = pd.DataFrame()
                         cleaned_df[col] = data[col].map(
                             lambda x: None if x > maxnum else True)
-                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
+                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index(drop=True)
 
                         if not myerr.empty:
                             mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr),
@@ -199,7 +199,7 @@ class ExcelToSQL:
                         cleaned_df = pd.DataFrame()
                         cleaned_df[col] = data[col].map(
                             lambda x: None if len(str(x)) > row['Character_Maximum_Length'][0] else True)
-                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
+                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index(drop=True)
 
                         if not myerr.empty:
                             mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr),
@@ -215,7 +215,7 @@ class ExcelToSQL:
                         cleaned_df['Date'] = data[col]
                         cleaned_df['Date'].loc[cleaned_df['Date'].isnull()] = datetime.datetime.now()
                         cleaned_df['Date'] = pd.to_datetime(cleaned_df['Date'], errors='coerce')
-                        myerr = data.loc[cleaned_df.loc[cleaned_df['Date'].isnull()].index].reset_index()
+                        myerr = data.loc[cleaned_df.loc[cleaned_df['Date'].isnull()].index].reset_index(drop=True)
 
                         if not myerr.empty:
                             mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr),
@@ -229,7 +229,7 @@ class ExcelToSQL:
                     elif row['Data_Type'][0] in ['money', 'smallmoney', 'numeric', 'decimal', 'float', 'real']:
                         cleaned_df = pd.DataFrame()
                         cleaned_df[col] = data[col].map(lambda x: True if is_number(str(x)) else None)
-                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
+                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index(drop=True)
 
                         if not myerr.empty:
                             mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr),
@@ -255,7 +255,7 @@ class ExcelToSQL:
                             cleaned_df = pd.DataFrame()
                             cleaned_df[col] = data[col].map(
                                 lambda x: None if x < minnum else True)
-                            myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
+                            myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index(drop=True)
 
                             if not myerr.empty:
                                 mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr),
@@ -270,7 +270,7 @@ class ExcelToSQL:
                             cleaned_df = pd.DataFrame()
                             cleaned_df[col] = data[col].map(
                                 lambda x: None if x > maxnum else True)
-                            myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
+                            myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index(drop=True)
 
                             if not myerr.empty:
                                 mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr),
@@ -287,7 +287,7 @@ class ExcelToSQL:
                             lambda x: None if ('.' in str(x) and len(str(x).split('.')[0]) >
                                                row['Numeric_Precision'][0]) or ('.' not in str(x) and len(str(x)) >
                                                                                 row['Numeric_Precision'][0]) else True)
-                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
+                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index(drop=True)
 
                         if not myerr.empty:
                             mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr),
@@ -303,7 +303,7 @@ class ExcelToSQL:
                         cleaned_df[col] = data[col].map(
                             lambda x: None if ('.' in str(x) and len(str(x).split('.')[1]) >
                                                row['Numeric_Scale'][0]) or '.' not in str(x) else True)
-                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index()
+                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index(drop=True)
 
                         if not myerr.empty:
                             mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr),
@@ -316,7 +316,7 @@ class ExcelToSQL:
                             return False
 
                     if row['Is_Nullable'][0] == 'NO':
-                        myerr = data.loc[data[col].isnull()].reset_index()
+                        myerr = data.loc[data[col].isnull()].reset_index(drop=True)
 
                         if not myerr.empty:
                             mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr),
