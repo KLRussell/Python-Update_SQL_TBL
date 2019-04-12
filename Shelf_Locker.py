@@ -1,3 +1,4 @@
+from Global import grabobjs
 from Global import ShelfHandle
 from tkinter import *
 from tkinter import messagebox
@@ -9,6 +10,7 @@ import pandas as pd
 CurrDir = os.path.dirname(os.path.abspath(__file__))
 PreserveDir = os.path.join(CurrDir, '04_Preserve')
 ShelfObj = ShelfHandle(os.path.join(PreserveDir, 'Data_Locker'))
+Global_Objs = grabobjs(CurrDir)
 
 
 class MainGUI:
@@ -81,14 +83,12 @@ class MainGUI:
         else:
             messagebox.showerror('Selection Error!', 'No shelf date was selected. Please select a valid shelf item')
 
-    @staticmethod
-    def settings():
-        myobj = SettingsGUI()
-        myobj.buildgui()
+    def settings(self):
+        obj = SettingsGUI(self.root)
+        obj.buildgui()
 
-    @staticmethod
-    def cancel():
-        sys.exit()
+    def cancel(self):
+        self.root.destroy()
 
 
 class SettingsGUI:
@@ -97,9 +97,10 @@ class SettingsGUI:
     radio1 = None
     radio2 = None
 
-    def __init__(self):
-        self.dialog = Tk()
-        self.rvar = IntVar()
+    def __init__(self, root):
+        self.dialog = Toplevel(root)
+        self.rvar = self.rvar = IntVar()
+        self.local_settings = Global_Objs['Local_Settings'].grab_list()
 
     def buildgui(self):
         self.dialog.geometry('250x200+500+300')
@@ -123,6 +124,7 @@ class SettingsGUI:
         self.entry1 = Entry(self.dialog)
         label1.pack(in_=middle_frame, side=LEFT)
         self.entry1.pack(in_=middle_frame, side=RIGHT)
+        self.entry1.bind('<KeyRelease>', self.checkshelf)
 
         self.radio1 = Radiobutton(self.dialog, text='Autofill Edit_DT On', variable=self.rvar, value=1, pady=5)
         self.radio1.pack(in_=middle_frame2, anchor=W)
@@ -135,6 +137,40 @@ class SettingsGUI:
         label2.pack(in_=middle_frame3, side=LEFT)
         self.entry2.pack(in_=middle_frame3, side=RIGHT)
         self.entry2.insert(0, "14")
+
+        btn = Button(self.dialog, text="Save Settings", width=10, command=self.save_settings)
+        btn2 = Button(self.dialog, text="Cancel", width=10, command=self.cancel)
+        btn.pack(in_=bottom_frame, side=LEFT, padx=10)
+        btn2.pack(in_=bottom_frame, side=RIGHT, padx=10)
+        self.dialog.mainloop()
+
+    def checkshelf(self, event):
+        if self.entry1.get() in self.local_settings:
+            myitems = self.local_settings[self.entry1.get()]
+
+            if myitems[0]:
+                self.radio1.select()
+            else:
+                self.radio2.select()
+
+            self.entry2.insert(0, myitems[1])
+
+    def save_settings(self):
+        if self.rvar.get() == '1':
+            myitems = [True, self.entry2.get()]
+        else:
+            myitems = [False, self.entry2.get()]
+
+        if self.entry1.get() in self.local_settings:
+            Global_Objs['Local_Settings'].del_item(self.entry1.get())
+
+        if self.rvar.get() != '1' or self.entry2.get() != '14':
+            Global_Objs['Local_Settings'].add_item(self.entry1.get(), myitems)
+
+        self.dialog.destroy()
+
+    def cancel(self):
+        self.dialog.destroy()
 
 
 if __name__ == '__main__':
