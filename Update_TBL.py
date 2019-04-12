@@ -31,6 +31,8 @@ class ExcelToSQL:
         obj = Global_Objs['Local_Settings'].grab_item(table)
         if obj:
             self.auto_edit_setting = obj[0]
+        else:
+            self.auto_edit_setting = True
 
         splittable = table.split('.')
 
