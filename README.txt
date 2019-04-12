@@ -63,7 +63,7 @@ HOW IT WORKS:
 	- Execute Update_TBL.py
 
 GRAB FROM PRESERVE LOCKER:
-	- Run Update_TBL_Locker.py
+	- Run Shelf_Locker.py
 
 	- Select a date from Preserve Locker to export into excel spreadsheet
 
@@ -71,3 +71,16 @@ GRAB FROM PRESERVE LOCKER:
 
 	- Tab 'TAB_Details' show details of each tab for that day in the Locker
 
+CUSTOMIZE TABLE SETTINGS FOR UPDATE_TBL.py
+	- Run Shelf_Locker.py
+
+	- Click settings button
+
+	- Type SQL <schema>.<table>
+
+	- *** Please keep in mind that an already added SQL table will load settings when you type in the
+	<schema>.<table>
+
+	- Select between enabling auto edit_dt update or disabling this feature
+
+	- Change shelf life days for the SQL table
