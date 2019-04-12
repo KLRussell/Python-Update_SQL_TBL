@@ -20,6 +20,7 @@ Preserve_Obj = None
 class ExcelToSQL:
     primary_key = None
     mode = None
+    auto_edit_setting = None
 
     def __init__(self):
         self.errors_obj = Global_Objs['Errors']
@@ -27,6 +28,10 @@ class ExcelToSQL:
         self.asql.connect('alch')
 
     def validate_tab(self, tab, table, data):
+        obj = Global_Objs['Local_Settings'].grab_item(table)
+        if obj:
+            self.auto_edit_setting = obj[0]
+
         splittable = table.split('.')
 
         if 'update_' in tab.lower():
@@ -328,12 +333,19 @@ class ExcelToSQL:
                         if len(data) < 1:
                             return False
 
-                if 'edit_dt' in [col.lower() for col in results['Column_Name']]\
-                        and ('edit_date', 'edit_dt') not in (col.lower() for col in data.columns.tolist()):
-                    data['Edit_DT'] = datetime.datetime.now()
-                elif 'edit_date' in [col.lower() for col in results['Column_Name']]\
-                        and ('edit_date', 'edit_dt') not in (col.lower() for col in data.columns.tolist()):
-                    data['Edit_Date'] = datetime.datetime.now()
+                if self.auto_edit_setting:
+                    if 'edit_dt' in [col.lower() for col in results['Column_Name']]\
+                            and ('edit_date', 'edit_dt') not in (col.lower() for col in data.columns.tolist()):
+                        data['Edit_DT'] = datetime.datetime.now()
+                    elif 'edit_date' in [col.lower() for col in results['Column_Name']]\
+                            and ('edit_date', 'edit_dt') not in (col.lower() for col in data.columns.tolist()):
+                        data['Edit_Date'] = datetime.datetime.now()
+                else:
+                    for col in data.columns.tolist():
+                        if col.lower() == 'edit_dt':
+                            del data[col]
+                        elif col.lower() == 'edit_date':
+                            del data[col]
             else:
                 mylist = [copy.copy(tab), copy.copy(table), copy.copy(data),
                           'Unable to find table {} in INFORMATION_SCHEMA.COLUMNS table'.format(table)]
