@@ -95,7 +95,7 @@ class ExcelToSQL:
 
             if not results.empty:
                 for col in data.columns.tolist():
-                    row = results.loc[results['Column_Name'] == col].reset_index(drop=True)
+                    row = results.loc[results['Column_Name'].str.lower() == col.lower()].reset_index(drop=True)
 
                     if row.empty:
                         mylist = [copy.copy(tab), copy.copy(table), copy.copy(data),
@@ -388,16 +388,17 @@ class ExcelToSQL:
                     return False
                 else:
                     for pk in results['COLUMN_NAME'].tolist():
-                        if pk in data.columns.tolist():
-                            if not self.primary_key:
-                                self.primary_key = pk
-                            else:
-                                mylist = [copy.copy(tab), copy.copy(table), copy.copy(data),
-                                          'Columns {0} & {1} are Primary Keys. Please list only one Primary Key for tab {2}'
-                                              .format(self.primary_key, pk, table)]
-                                self.errors_obj.append_errors(mylist)
+                        for col in data.columns.tolist():
+                            if pk.lower() == col.lower():
+                                if not self.primary_key:
+                                    self.primary_key = col
+                                else:
+                                    mylist = [copy.copy(tab), copy.copy(table), copy.copy(data),
+                                              'Columns {0} & {1} are Primary Keys. Please list only one Primary Key for tab {2}'
+                                                  .format(self.primary_key, pk, table)]
+                                    self.errors_obj.append_errors(mylist)
 
-                                return False
+                                    return False
             elif self.mode:
                 return True
             else:
@@ -576,6 +577,27 @@ class ExcelToSQL:
         self.asql.close()
 
 
+def trim_preserve():
+    mysettings = Global_Objs['Local_Settings'].grab_list()
+    mylocker = Preserve_Obj.grab_list()
+
+    for shelf_key, shelf_items in mylocker.items():
+        for sub_shelf_item in shelf_items:
+            shelf_life = 14
+            for setting_key, setting_item in mysettings.items():
+                if setting_key != 'General_Settings_Path' and sub_shelf_item[2] == setting_key:
+                    shelf_life = int(setting_item[1])
+                    break
+
+            shelf_life *= -1
+            mydate = datetime.datetime.now() + datetime.timedelta(days=shelf_life)
+
+            if shelf_key < mydate.__format__("%Y%m%d"):
+                shelf_items.remove(sub_shelf_item)
+
+    print(mylocker)
+
+
 def check_for_updates():
     f = list(pl.Path(ProcDir).glob('*.xls*'))
 
@@ -585,29 +607,30 @@ def check_for_updates():
 
 def process_updates(files):
     myobj = ExcelToSQL()
+    try:
+        for file in files:
+            Global_Objs['Event_Log'].write_log('Processing file {}'.format(os.path.basename(file)))
+            xls_file = pd.ExcelFile(file)
 
-    for file in files:
-        Global_Objs['Event_Log'].write_log('Processing file {}'.format(os.path.basename(file)))
-        xls_file = pd.ExcelFile(file)
+            for tab in xls_file.sheet_names:
+                table = xls_file.parse(tab, nrows=1, header=None).iloc[0, 0]
+                df = xls_file.parse(tab, skiprows=1)
 
-        for tab in xls_file.sheet_names:
-            table = xls_file.parse(tab, nrows=1, header=None).iloc[0, 0]
-            df = xls_file.parse(tab, skiprows=1)
+                Global_Objs['Event_Log'].write_log('Validating tab {} for errors'.format(tab))
 
-            Global_Objs['Event_Log'].write_log('Validating tab {} for errors'.format(tab))
+                if myobj.validate_tab(tab, table, df) and myobj.validate_data(tab, table, df):
+                    if files:
+                        Global_Objs['Event_Log'].write_log('Inserting {0} items into {1}'.format(len(df), table))
+                    else:
+                        Global_Objs['Event_Log'].write_log('Updating {0} items in {1}'.format(len(df), table))
 
-            if myobj.validate_tab(tab, table, df) and myobj.validate_data(tab, table, df):
-                if files:
-                    Global_Objs['Event_Log'].write_log('Inserting {0} items into {1}'.format(len(df), table))
-                else:
-                    Global_Objs['Event_Log'].write_log('Updating {0} items in {1}'.format(len(df), table))
+                    myobj.update_tbl(file, tab, table, df)
 
-                myobj.update_tbl(file, tab, table, df)
-
-            myobj.process_errs(file)
-        os.remove(file)
-    myobj.close_sql()
-    del myobj
+                myobj.process_errs(file)
+            os.remove(file)
+    finally:
+        myobj.close_sql()
+        del myobj
 
 
 def is_number(n, nanoveride=False):
@@ -643,6 +666,7 @@ if __name__ == '__main__':
     Global_Objs['SQL'].close()
 
     Preserve_Obj = ShelfHandle(os.path.join(PreserveDir, 'Data_Locker'))
+    trim_preserve()
     has_updates = check_for_updates()
 
     if has_updates:

@@ -154,7 +154,7 @@ class SettingsGUI:
         self.dialog.mainloop()
 
     def checkshelf(self, event):
-        if self.entry1.get() in self.local_settings:
+        if self.entry1.get() in self.local_settings and self.entry1.get() != "General_Settings_Path":
             myitems = self.local_settings[self.entry1.get()]
 
             if myitems[0]:
@@ -166,18 +166,21 @@ class SettingsGUI:
             self.entry2.insert(0, myitems[1])
 
     def save_settings(self):
-        if self.rvar.get() == 1:
-            myitems = [True, self.entry2.get()]
+        if self.entry1.get() == "General_Settings_Path":
+            messagebox.showerror('Table Error', 'Unable to have General_Settings_Path as a table name')
         else:
-            myitems = [False, self.entry2.get()]
+            if self.rvar.get() == 1:
+                myitems = [True, self.entry2.get()]
+            else:
+                myitems = [False, self.entry2.get()]
 
-        if self.entry1.get() in self.local_settings:
-            Global_Objs['Local_Settings'].del_item(self.entry1.get())
+            if self.entry1.get() in self.local_settings:
+                Global_Objs['Local_Settings'].del_item(self.entry1.get())
 
-        if self.rvar.get() != 1 or self.entry2.get() != '14':
-            Global_Objs['Local_Settings'].add_item(self.entry1.get(), myitems)
+            if self.rvar.get() != 1 or self.entry2.get() != '14':
+                Global_Objs['Local_Settings'].add_item(self.entry1.get(), myitems)
 
-        self.dialog.destroy()
+            self.dialog.destroy()
 
     def close(self):
         self.dialog.destroy()
