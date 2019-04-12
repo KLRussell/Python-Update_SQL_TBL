@@ -571,7 +571,7 @@ class ExcelToSQL:
                     err[2].to_excel(writer, index=False, startrow=1, sheet_name=err[0])
 
                 df = pd.DataFrame(errmsgs, columns=['File_Creator_Name', 'Tab_Name', 'SQL Table', 'Error Desc'])
-                df.to_excel(writer, sheet_name='Error_Details')
+                df.to_excel(writer, index=False, sheet_name='Error_Details')
 
     def close_sql(self):
         self.asql.close()
