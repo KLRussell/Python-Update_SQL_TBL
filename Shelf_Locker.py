@@ -81,7 +81,7 @@ class MainGUI:
                                                    'Append_Time'])
                 df.to_excel(writer, index=False, sheet_name='TAB_Details')
 
-            sys.exit()
+            self.cancel()
 
         else:
             messagebox.showerror('Selection Error!', 'No shelf date was selected. Please select a valid shelf item')
