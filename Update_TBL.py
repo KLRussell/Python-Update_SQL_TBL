@@ -1,13 +1,15 @@
 from Global import grabobjs
 from Global import ShelfHandle
+from win32com.shell import shell
+from win32com import storagecon
 
 import pandas as pd
 import pathlib as pl
 import os
 import copy
-import win32security
 import datetime
 import random
+import pythoncom
 
 CurrDir = os.path.dirname(os.path.abspath(__file__))
 ProcDir = os.path.join(CurrDir, '02_To_Process')
@@ -15,6 +17,22 @@ ErrDir = os.path.join(CurrDir, '03_Errors')
 PreserveDir = os.path.join(CurrDir, '04_Preserve')
 Global_Objs = grabobjs(CurrDir)
 Preserve_Obj = None
+
+FORMATS = {
+    pythoncom.FMTID_SummaryInformation: "SummaryInformation",
+    pythoncom.FMTID_DocSummaryInformation: "DocSummaryInformation",
+    pythoncom.FMTID_UserDefinedProperties: "UserDefinedProperties"
+}
+PROPERTIES = {
+    pythoncom.FMTID_SummaryInformation: dict(
+        (getattr(storagecon, d), d) for d in dir(storagecon) if d.startswith("PIDSI_")
+    ),
+    pythoncom.FMTID_DocSummaryInformation: dict(
+        (getattr(storagecon, d), d) for d in dir(storagecon) if d.startswith("PIDDSI_")
+    )
+}
+
+STORAGE_READ = storagecon.STGM_READ | storagecon.STGM_SHARE_EXCLUSIVE
 
 
 class ExcelToSQL:
@@ -526,13 +544,11 @@ class ExcelToSQL:
     def shelf_old(self, file, table, df):
         if table and not df.empty:
             today = datetime.datetime.now().__format__("%Y%m%d")
-            sd = win32security.GetFileSecurity(os.fsdecode(file), win32security.OWNER_SECURITY_INFORMATION)
-            owner_sid = sd.GetSecurityDescriptorOwner()
-            creator, domain, type = win32security.LookupAccountSid(None, owner_sid)
+            authors = ', '.join(find_author(file))
             mylist = Preserve_Obj.grab_item(today)
 
-            Global_Objs['Event_Log'].write_log('Shelfing updates from {0} ({1}\\{2})'.format(os.path.basename(file),
-                                                                                             domain, creator))
+            Global_Objs['Event_Log'].write_log('Shelfing updates from {0} ({1})'.format(os.path.basename(file),
+                                                                                        authors))
 
             if self.mode:
                 mode = 'Insert'
@@ -541,10 +557,10 @@ class ExcelToSQL:
 
             if mylist:
                 Preserve_Obj.del_item(today)
-                mylist.append(['%s\\%s' % (domain, creator), mode, table, df, datetime.datetime.now()])
+                mylist.append([authors, mode, table, df, datetime.datetime.now()])
                 Preserve_Obj.add_item(today, mylist)
             else:
-                mylist = [['%s\\%s' % (domain, creator), mode, table, df, datetime.datetime.now()]]
+                mylist = [[authors, mode, table, df, datetime.datetime.now()]]
                 Preserve_Obj.add_item(today, mylist)
 
     def process_errs(self, file):
@@ -553,20 +569,18 @@ class ExcelToSQL:
         if myerrs:
             errmsgs = []
 
-            sd = win32security.GetFileSecurity(os.fsdecode(file), win32security.OWNER_SECURITY_INFORMATION)
-            owner_sid = sd.GetSecurityDescriptorOwner()
-            creator, domain, type = win32security.LookupAccountSid(None, owner_sid)
+            authors = ', '.join(find_author(file))
 
             filename = '{0}_{1}{2}'.format(datetime.datetime.now().__format__("%Y%m%d"),
                                            random.randint(10000000, 100000000),
                                            os.path.splitext(os.path.split(file)[1])[1])
 
-            Global_Objs['Event_Log'].write_log('Appending errors into {0} ({1}\\{2})'.format(filename,
-                                                                                             domain, creator), 'error')
+            Global_Objs['Event_Log'].write_log('Appending errors into {0} ({1})'.format(filename,
+                                                                                        authors), 'error')
 
             with pd.ExcelWriter(os.path.join(ErrDir, filename)) as writer:
                 for err in myerrs:
-                    errmsgs.append(('%s\\%s' % (domain, creator), err[0], err[1], err[3]))
+                    errmsgs.append((authors, err[0], err[1], err[3]))
                     pd.DataFrame([err[1]]).to_excel(writer, index=False, header=False, sheet_name=err[0])
                     err[2].to_excel(writer, index=False, startrow=1, sheet_name=err[0])
 
@@ -653,6 +667,47 @@ def is_digit(n):
         return any(i.isdigit() for i in n)
     else:
         return True
+
+
+def property_dict(property_set_storage, fmtid):
+    properties = {}
+    try:
+        property_storage = property_set_storage.Open(fmtid, STORAGE_READ)
+    except:
+        raise Exception('Error')
+
+    for name, property_id, vartype in property_storage:
+        if name is None:
+            name = PROPERTIES.get(fmtid, {}).get(property_id, None)
+        if name is None:
+            name = hex(property_id)
+        try:
+            for value in property_storage.ReadMultiple([property_id]):
+                properties[name] = value
+
+        except TypeError:
+            properties[name] = None
+    return properties
+
+
+def property_sets(filepath):
+    pidl, flags = shell.SHILCreateFromPath(os.path.abspath(filepath), 0)
+    property_set_storage = shell.SHGetDesktopFolder().BindToStorage(pidl, None, pythoncom.IID_IPropertySetStorage)
+    for fmtid, clsid, flags, ctime, mtime, atime in property_set_storage:
+        yield FORMATS.get(fmtid, fmtid), property_dict(property_set_storage, fmtid)
+        if fmtid == pythoncom.FMTID_DocSummaryInformation:
+            fmtid = pythoncom.FMTID_UserDefinedProperties
+            user_defined_properties = property_dict(property_set_storage, fmtid)
+            if user_defined_properties:
+                yield FORMATS.get(fmtid, fmtid), user_defined_properties
+
+
+def find_author(file):
+    for name, properties in property_sets(file):
+        if name == 'SummaryInformation':
+            for k, v in properties.items():
+                if k == 'PIDSI_AUTHOR':
+                    return v
 
 
 if __name__ == '__main__':
