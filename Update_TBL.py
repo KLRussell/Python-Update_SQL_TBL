@@ -520,26 +520,17 @@ class ExcelToSQL:
         self.asql.execute('drop table UT_TMP')
 
     def format_sql_set(self, cols, prefix=None):
-        myreturn = None
+        myreturn = []
         for col in cols:
             if not col == self.primary_key:
                 if self.mode:
-                    if myreturn:
-                        myreturn = '{0}, {1}'.format(myreturn, col)
-                    else:
-                        myreturn = '{0}'.format(col)
+                    myreturn.append(col)
                 elif prefix:
-                    if myreturn:
-                        myreturn = '{0}, {1}{2}'.format(myreturn, prefix, col)
-                    else:
-                        myreturn = '{0}{1}'.format(prefix, col)
+                    myreturn.append('{0}{1}'.format(prefix, col))
                 else:
-                    if myreturn:
-                        myreturn = '{0}, B.{1} = A.{1}'.format(myreturn, col)
-                    else:
-                        myreturn = 'B.{0} = A.{0}'.format(col)
+                    myreturn.append('B.{0} = A.{0}'.format(col))
 
-        return myreturn
+        return ', '.join(myreturn)
 
     def shelf_old(self, file, table, df):
         if table and not df.empty:
