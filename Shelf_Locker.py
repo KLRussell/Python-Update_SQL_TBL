@@ -77,7 +77,7 @@ class MainGUI:
 
                     num += 1
 
-                df = pd.DataFrame(mylist, columns=['Orig_File_Name', 'File_Creator_Name', 'Tab_Name', 'SQL_Table',
+                df = pd.DataFrame(mylist, columns=['Orig_File_Name', 'File_Authors', 'Tab_Name', 'SQL_Table',
                                                    'Append_Time'])
                 df.to_excel(writer, index=False, sheet_name='TAB_Details')
 
