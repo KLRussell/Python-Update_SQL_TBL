@@ -17,9 +17,7 @@ def grabobjs(scriptdir):
         myobjs = dict()
         myinput = None
 
-        if len(list(pl.Path(scriptdir).glob('General_Settings.*'))) > 0:
-            myobjs['Settings'] = ShelfHandle(os.path.join(scriptdir, 'General_Settings'))
-        elif len(list(pl.Path(scriptdir).glob('Script_Settings.*'))) > 0:
+        if len(list(pl.Path(scriptdir).glob('Script_Settings.*'))) > 0:
             myobjs['Local_Settings'] = ShelfHandle(os.path.join(scriptdir, 'Script_Settings'))
             mydir = myobjs['Local_Settings'].grab_item('General_Settings_Path')
 
@@ -41,12 +39,10 @@ def grabobjs(scriptdir):
                 if myinput and not os.path.exists(myinput):
                     myinput = None
 
-        if myinput == scriptdir:
-            myobjs['Settings'] = ShelfHandle(os.path.join(scriptdir, 'General_Settings'))
-        else:
+        if myinput:
             myobjs['Local_Settings'] = ShelfHandle(os.path.join(scriptdir, 'Script_Settings'))
             myobjs['Local_Settings'].add_item('General_Settings_Path', myinput)
-            myobjs['Settings'] = ShelfHandle(os.path.join(myinput, 'General_Settings'))
+            myobjs['Settings'] = ShelfHandle(os.path.join(scriptdir, 'General_Settings'))
 
         myobjs['Event_Log'] = LogHandle(scriptdir)
         myobjs['SQL'] = SQLHandle(myobjs['Settings'])
