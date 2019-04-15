@@ -673,8 +673,8 @@ def property_dict(property_set_storage, fmtid):
     properties = {}
     try:
         property_storage = property_set_storage.Open(fmtid, STORAGE_READ)
-    except:
-        raise Exception('Error')
+    except TypeError:
+        return None
 
     for name, property_id, vartype in property_storage:
         if name is None:
