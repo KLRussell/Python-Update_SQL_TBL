@@ -557,10 +557,10 @@ class ExcelToSQL:
 
             if mylist:
                 Preserve_Obj.del_item(today)
-                mylist.append([authors, mode, table, df, datetime.datetime.now()])
+                mylist.append([os.path.basename(file), authors, mode, table, df, datetime.datetime.now()])
                 Preserve_Obj.add_item(today, mylist)
             else:
-                mylist = [[authors, mode, table, df, datetime.datetime.now()]]
+                mylist = [[os.path.basename(file), authors, mode, table, df, datetime.datetime.now()]]
                 Preserve_Obj.add_item(today, mylist)
 
     def process_errs(self, file):
@@ -580,11 +580,12 @@ class ExcelToSQL:
 
             with pd.ExcelWriter(os.path.join(ErrDir, filename)) as writer:
                 for err in myerrs:
-                    errmsgs.append((authors, err[0], err[1], err[3]))
+                    errmsgs.append((os.path.basename(file), authors, err[0], err[1], err[3]))
                     pd.DataFrame([err[1]]).to_excel(writer, index=False, header=False, sheet_name=err[0])
                     err[2].to_excel(writer, index=False, startrow=1, sheet_name=err[0])
 
-                df = pd.DataFrame(errmsgs, columns=['File_Creator_Name', 'Tab_Name', 'SQL Table', 'Error Desc'])
+                df = pd.DataFrame(errmsgs, columns=['Orig_File_Name', 'File_Creator_Name', 'Tab_Name', 'SQL Table',
+                                                    'Error Desc'])
                 df.to_excel(writer, index=False, sheet_name='Error_Details')
 
     def close_sql(self):
