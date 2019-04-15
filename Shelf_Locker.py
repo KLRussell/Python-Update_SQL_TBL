@@ -155,7 +155,8 @@ class SettingsGUI:
         self.dialog.mainloop()
 
     def checkshelf(self, event):
-        if self.entry1.get() in self.local_settings and self.entry1.get() != "General_Settings_Path":
+        if self.entry1.get() in self.local_settings and self.entry1.get() != "General_Settings_Path"\
+                and self.entry1.get() != "Server" and self.entry1.get() != "Database":
             myitems = self.local_settings[self.entry1.get()]
 
             if myitems[0]:
@@ -169,6 +170,10 @@ class SettingsGUI:
     def save_settings(self):
         if self.entry1.get() == "General_Settings_Path":
             messagebox.showerror('Table Error', 'Unable to have General_Settings_Path as a table name')
+        elif self.entry1.get() == 'Server':
+            messagebox.showerror('Table Error', 'Unable to have Server as a table name')
+        elif self.entry1.get() == 'Database':
+            messagebox.showerror('Table Error', 'Unable to have Database as a table name')
         else:
             if self.rvar.get() == 1:
                 myitems = [True, self.entry2.get()]
