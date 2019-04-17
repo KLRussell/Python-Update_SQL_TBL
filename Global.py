@@ -354,7 +354,7 @@ class SQLHandle:
         if self.conn_type == 'alch':
             self.engine = mysql.create_engine(self.conn_str)
         else:
-            self.conn = pyodbc.connect(self.conn_str)
+            self.conn = pyodbc.connect(self.conn_str, autocommit=True)
             self.cursor = self.conn.cursor()
             self.conn.commit()
 
@@ -431,7 +431,7 @@ class SQLHandle:
     def execute(self, query):
         try:
             if self.conn_type == 'alch':
-                self.engine.execute(mysql.text(query))
+                self.engine.execution_options(autocommit=True).execute(mysql.text(query))
             else:
                 self.cursor.execute(query)
 
