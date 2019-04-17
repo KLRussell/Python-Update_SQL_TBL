@@ -586,12 +586,14 @@ class ExcelToSQL:
 def trim_preserve():
     mysettings = Global_Objs['Local_Settings'].grab_list()
     mylocker = Preserve_Obj.grab_list()
+    clean_up = []
 
     for shelf_key, shelf_items in mylocker.items():
         for sub_shelf_item in shelf_items:
             shelf_life = 14
+
             for setting_key, setting_item in mysettings.items():
-                if setting_key != 'General_Settings_Path' and sub_shelf_item[2] == setting_key:
+                if setting_key != 'General_Settings_Path' and sub_shelf_item[3] == setting_key:
                     shelf_life = int(setting_item[1])
                     break
 
@@ -601,10 +603,16 @@ def trim_preserve():
             if shelf_key < mydate.__format__("%Y%m%d"):
                 shelf_items.remove(sub_shelf_item)
 
-        mylocker[shelf_key] = shelf_items
+        if not shelf_items:
+            clean_up.append(shelf_key)
+
+    for key in clean_up:
+        del mylocker[key]
 
     Preserve_Obj.empty_list()
-    Preserve_Obj.add_list(mylocker)
+
+    if mylocker:
+        Preserve_Obj.add_list(mylocker)
 
 
 def check_for_updates():

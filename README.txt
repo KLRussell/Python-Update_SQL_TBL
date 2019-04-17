@@ -30,9 +30,17 @@ with the current datetime.
 
 
 INSTALLATION:
-	- Global.py can be placed in one of the PYTHONPATH directories
+	- Global.py can be placed in one of the PYTHONPATH directories or be placed in the same folder as
+	Update_TBL.py.
 
 	- Update_TBL.py needs to be placed in a new folder and you can place that folder where you see fit
+
+	- Ensure that the following dependency modules are installed before running the python scripts
+	(ie. pip install <module name>) [There may be additional dependency modules needed for installation]
+		* Pandas
+		* SQLAlchemy
+		* Pyodbc
+		* tkinter
 
 SETUP:
 	- Run Update_TBL.py
