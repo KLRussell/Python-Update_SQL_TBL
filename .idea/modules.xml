@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/Update_TBL.iml" filepath="$PROJECT_DIR$/.idea/Update_TBL.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/05_TSQL_TBL.iml" filepath="$PROJECT_DIR$/.idea/05_TSQL_TBL.iml" />
     </modules>
   </component>
 </project>
