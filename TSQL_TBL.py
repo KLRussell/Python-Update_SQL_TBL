@@ -1,5 +1,6 @@
 from Global import grabobjs
 from Global import ShelfHandle
+from Settings import SettingsGUI
 from win32com.shell import shell
 from win32com import storagecon
 
@@ -11,11 +12,12 @@ import datetime
 import random
 import pythoncom
 
-CurrDir = os.path.dirname(os.path.abspath(__file__))
-ProcDir = os.path.join(CurrDir, '02_To_Process')
-ErrDir = os.path.join(CurrDir, '03_Errors')
-PreserveDir = os.path.join(CurrDir, '04_Preserve')
-Global_Objs = grabobjs(CurrDir)
+curr_dir = os.path.dirname(os.path.abspath(__file__))
+main_dir = os.path.dirname(curr_dir)
+ProcDir = os.path.join(main_dir, '02_To_Process')
+ErrDir = os.path.join(main_dir, '03_Errors')
+PreserveDir = os.path.join(main_dir, '04_Preserve')
+global_objs = grabobjs(main_dir)
 Preserve_Obj = None
 
 FORMATS = {
@@ -41,12 +43,12 @@ class ExcelToSQL:
     auto_edit_setting = None
 
     def __init__(self):
-        self.errors_obj = Global_Objs['Errors']
-        self.asql = Global_Objs['SQL']
+        self.errors_obj = global_objs['Errors']
+        self.asql = global_objs['SQL']
         self.asql.connect('alch')
 
     def validate_tab(self, tab, table, data):
-        obj = Global_Objs['Local_Settings'].grab_item(table)
+        obj = global_objs['Local_Settings'].grab_item(table)
         if obj:
             self.auto_edit_setting = obj[0]
         else:
@@ -538,7 +540,7 @@ class ExcelToSQL:
             authors = ', '.join(find_author(file))
             mylist = Preserve_Obj.grab_item(today)
 
-            Global_Objs['Event_Log'].write_log('Shelfing updates from {0} ({1})'.format(os.path.basename(file),
+            global_objs['Event_Log'].write_log('Shelfing updates from {0} ({1})'.format(os.path.basename(file),
                                                                                         authors))
 
             if self.mode:
@@ -566,7 +568,7 @@ class ExcelToSQL:
                                            random.randint(10000000, 100000000),
                                            os.path.splitext(os.path.split(file)[1])[1])
 
-            Global_Objs['Event_Log'].write_log('Appending errors into {0} ({1})'.format(filename,
+            global_objs['Event_Log'].write_log('Appending errors into {0} ({1})'.format(filename,
                                                                                         authors), 'error')
 
             with pd.ExcelWriter(os.path.join(ErrDir, filename)) as writer:
@@ -584,7 +586,7 @@ class ExcelToSQL:
 
 
 def trim_preserve():
-    mysettings = Global_Objs['Local_Settings'].grab_list()
+    mysettings = global_objs['Local_Settings'].grab_list()
     mylocker = Preserve_Obj.grab_list()
     clean_up = []
 
@@ -626,20 +628,20 @@ def process_updates(files):
     myobj = ExcelToSQL()
     try:
         for file in files:
-            Global_Objs['Event_Log'].write_log('Processing file {}'.format(os.path.basename(file)))
+            global_objs['Event_Log'].write_log('Processing file {}'.format(os.path.basename(file)))
             xls_file = pd.ExcelFile(file)
 
             for tab in xls_file.sheet_names:
                 table = xls_file.parse(tab, nrows=1, header=None).iloc[0, 0]
                 df = xls_file.parse(tab, skiprows=1)
 
-                Global_Objs['Event_Log'].write_log('Validating tab {} for errors'.format(tab))
+                global_objs['Event_Log'].write_log('Validating tab {} for errors'.format(tab))
 
                 if myobj.validate_tab(tab, table, df) and myobj.validate_data(tab, table, df):
                     if files:
-                        Global_Objs['Event_Log'].write_log('Inserting {0} items into {1}'.format(len(df), table))
+                        global_objs['Event_Log'].write_log('Inserting {0} items into {1}'.format(len(df), table))
                     else:
-                        Global_Objs['Event_Log'].write_log('Updating {0} items in {1}'.format(len(df), table))
+                        global_objs['Event_Log'].write_log('Updating {0} items in {1}'.format(len(df), table))
 
                     myobj.update_tbl(file, tab, table, df)
 
@@ -710,7 +712,9 @@ def find_author(file):
                     return v
 
 
-if __name__ == '__main__':
+def check_settings():
+    obj = SettingsGUI()
+
     if not os.path.exists(ProcDir):
         os.makedirs(ProcDir)
 
@@ -720,17 +724,56 @@ if __name__ == '__main__':
     if not os.path.exists(PreserveDir):
         os.makedirs(PreserveDir)
 
-    Global_Objs['SQL'].connect('alch')
-    Global_Objs['SQL'].close()
+    if not global_objs['Settings'].grab_item('Server') \
+            or not global_objs['Settings'].grab_item('Database'):
+        header_text = 'Welcome to Vacuum Settings!\nSettings haven''t been established.\nPlease fill out all empty fields below:'
+        obj.build_gui(header_text)
+        del obj
+        return False
+    else:
+        mylist = []
+
+        if not obj.sql_connect():
+            mylist.append('network')
+        if not os.path.exists(global_objs['Local_Settings'].grab_item('CSR_Dir').decrypt_text()):
+            mylist.append('CSR Dir')
+        if not obj.check_table(global_objs['Local_Settings'].grab_item('W1S_TBL').decrypt_text()):
+            mylist.append('W1S')
+        if not obj.check_table(global_objs['Local_Settings'].grab_item('W2S_TBL').decrypt_text()):
+            mylist.append('W2S')
+        if not obj.check_table(global_objs['Local_Settings'].grab_item('W3S_TBL').decrypt_text()):
+            mylist.append('W3S')
+        if not obj.check_table(global_objs['Local_Settings'].grab_item('W4S_TBL').decrypt_text()):
+            mylist.append('W4S')
+        if not obj.check_table(global_objs['Local_Settings'].grab_item('WE_TBL').decrypt_text()):
+            mylist.append('WE')
+
+        if len(mylist) > 0:
+            header_text = 'Welcome to Vacuum Settings!\n{0} settings are invalid.\nPlease fix the network settings below:' \
+                .format(', '.join(mylist))
+            obj.build_gui(header_text)
+            del obj, mylist
+            return False
+        del mylist
+    del obj
+    return True
+
+
+if __name__ == '__main__':
+    if check_settings():
+        try:
+            global_objs['SQL'].connect('alch')
+        finally:
+            global_objs['SQL'].close()
 
     Preserve_Obj = ShelfHandle(os.path.join(PreserveDir, 'Data_Locker'))
     trim_preserve()
     has_updates = check_for_updates()
 
     if has_updates:
-        Global_Objs['Event_Log'].write_log('Found {} files to process'.format(len(has_updates)))
+        global_objs['Event_Log'].write_log('Found {} files to process'.format(len(has_updates)))
         process_updates(has_updates)
     else:
-        Global_Objs['Event_Log'].write_log('Found no files to process', 'warning')
+        global_objs['Event_Log'].write_log('Found no files to process', 'warning')
 
     os.system('pause')
