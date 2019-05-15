@@ -52,11 +52,11 @@ class SettingsGUI:
 
     # static function to add setting to Local_Settings shelf files
     @staticmethod
-    def add_setting(setting_list, val, key):
+    def add_setting(setting_list, val, key, encrypt=True):
         assert (key and val and setting_list)
 
         global_objs[setting_list].del_item(key)
-        global_objs[setting_list].add_item(key=key, val=val, encrypt=True)
+        global_objs[setting_list].add_item(key=key, val=val, encrypt=encrypt)
 
     # Function to build GUI for settings
     def build_gui(self, header=None):
@@ -143,14 +143,17 @@ class SettingsGUI:
     def fill_gui(self):
         self.fill_textbox('Settings', self.server, 'Server')
         self.fill_textbox('Settings', self.database, 'Database')
+        self.autofill.set(1)
+        self.shelf_life.set(14)
 
-        if not self.server.get() or not self.database.get():
+        if not self.server.get() or not self.database.get() or not self.asql.test_conn('alch'):
             self.sql_tbl_txtbox.configure(state=DISABLED)
             self.save_button.configure(state=DISABLED)
-
-        self.shelf_file_txtbox.configure(state=DISABLED)
-        self.autofill_radio1.configure(state=DISABLED)
-        self.autofill_radio2.configure(state=DISABLED)
+            self.shelf_file_txtbox.configure(state=DISABLED)
+            self.autofill_radio1.configure(state=DISABLED)
+            self.autofill_radio2.configure(state=DISABLED)
+        else:
+            self.asql.connect('alch')
 
     # Function to check network settings if populated
     def check_network(self):
@@ -162,6 +165,9 @@ class SettingsGUI:
             if self.asql.test_conn('alch'):
                 self.sql_tbl_txtbox.configure(state=NORMAL)
                 self.save_button.configure(state=NORMAL)
+                self.shelf_file_txtbox.configure(state=NORMAL)
+                self.autofill_radio1.configure(state=NORMAL)
+                self.autofill_radio2.configure(state=NORMAL)
                 self.add_setting('Settings', self.server.get(), 'Server')
                 self.add_setting('Settings', self.database.get(), 'Database')
                 self.asql.connect('alch')
@@ -188,11 +194,8 @@ class SettingsGUI:
         else:
             return False
 
-    def check_shelf(self):
+    def check_shelf(self, event):
         if self.sql_tbl.get() in self.local_settings and self.sql_tbl.get() != 'General_Settings_Path':
-            self.shelf_file_txtbox.configure(state=NORMAL)
-            self.autofill_radio1.configure(state=NORMAL)
-            self.autofill_radio2.configure(state=NORMAL)
             myitems = self.local_settings[self.sql_tbl.get()]
 
             if myitems[0]:
@@ -237,7 +240,8 @@ class SettingsGUI:
                     else:
                         myitems = [False, self.shelf_life.get()]
 
-                    self.add_setting('Local_Settings', myitems, self.sql_tbl.get())
+                    self.add_setting('Local_Settings', myitems, self.sql_tbl.get(), False)
+                    self.main.destroy()
 
     # Function to load extract Shelf GUI
     def extract_shelf(self):
