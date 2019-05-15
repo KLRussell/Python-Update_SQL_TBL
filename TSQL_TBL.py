@@ -731,30 +731,35 @@ def check_settings():
         del obj
         return False
     else:
-        mylist = []
+        try:
+            mylist = []
 
-        if not obj.sql_connect():
-            mylist.append('network')
-        if not os.path.exists(global_objs['Local_Settings'].grab_item('CSR_Dir').decrypt_text()):
-            mylist.append('CSR Dir')
-        if not obj.check_table(global_objs['Local_Settings'].grab_item('W1S_TBL').decrypt_text()):
-            mylist.append('W1S')
-        if not obj.check_table(global_objs['Local_Settings'].grab_item('W2S_TBL').decrypt_text()):
-            mylist.append('W2S')
-        if not obj.check_table(global_objs['Local_Settings'].grab_item('W3S_TBL').decrypt_text()):
-            mylist.append('W3S')
-        if not obj.check_table(global_objs['Local_Settings'].grab_item('W4S_TBL').decrypt_text()):
-            mylist.append('W4S')
-        if not obj.check_table(global_objs['Local_Settings'].grab_item('WE_TBL').decrypt_text()):
-            mylist.append('WE')
+            if not obj.sql_connect():
+                mylist.append('network')
+            if not os.path.exists(global_objs['Local_Settings'].grab_item('CSR_Dir').decrypt_text()):
+                mylist.append('CSR Dir')
+            if not obj.check_table(global_objs['Local_Settings'].grab_item('W1S_TBL').decrypt_text()):
+                mylist.append('W1S')
+            if not obj.check_table(global_objs['Local_Settings'].grab_item('W2S_TBL').decrypt_text()):
+                mylist.append('W2S')
+            if not obj.check_table(global_objs['Local_Settings'].grab_item('W3S_TBL').decrypt_text()):
+                mylist.append('W3S')
+            if not obj.check_table(global_objs['Local_Settings'].grab_item('W4S_TBL').decrypt_text()):
+                mylist.append('W4S')
+            if not obj.check_table(global_objs['Local_Settings'].grab_item('WE_TBL').decrypt_text()):
+                mylist.append('WE')
 
-        if len(mylist) > 0:
-            header_text = 'Welcome to Vacuum Settings!\n{0} settings are invalid.\nPlease fix the network settings below:' \
-                .format(', '.join(mylist))
-            obj.build_gui(header_text)
-            del obj, mylist
+            if len(mylist) > 0:
+                header_text = 'Welcome to Vacuum Settings!\n{0} settings are invalid.\nPlease fix the network settings below:' \
+                    .format(', '.join(mylist))
+                obj.build_gui(header_text)
+                del obj, mylist
+                return False
+            del mylist
+        except:
             return False
-        del mylist
+        finally:
+            obj.sql_close()
     del obj
     return True
 
