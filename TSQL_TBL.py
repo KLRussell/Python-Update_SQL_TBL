@@ -713,6 +713,7 @@ def find_author(file):
 
 
 def check_settings():
+    my_return = False
     obj = SettingsGUI()
 
     if not os.path.exists(ProcDir):
@@ -726,59 +727,34 @@ def check_settings():
 
     if not global_objs['Settings'].grab_item('Server') \
             or not global_objs['Settings'].grab_item('Database'):
-        header_text = 'Welcome to Vacuum Settings!\nSettings haven''t been established.\nPlease fill out all empty fields below:'
+        header_text = 'Welcome to TSQL TBL Tool!\nSettings haven''t been established.\nPlease fill out all empty fields below:'
         obj.build_gui(header_text)
-        del obj
-        return False
     else:
         try:
-            mylist = []
-
             if not obj.sql_connect():
-                mylist.append('network')
-            if not os.path.exists(global_objs['Local_Settings'].grab_item('CSR_Dir').decrypt_text()):
-                mylist.append('CSR Dir')
-            if not obj.check_table(global_objs['Local_Settings'].grab_item('W1S_TBL').decrypt_text()):
-                mylist.append('W1S')
-            if not obj.check_table(global_objs['Local_Settings'].grab_item('W2S_TBL').decrypt_text()):
-                mylist.append('W2S')
-            if not obj.check_table(global_objs['Local_Settings'].grab_item('W3S_TBL').decrypt_text()):
-                mylist.append('W3S')
-            if not obj.check_table(global_objs['Local_Settings'].grab_item('W4S_TBL').decrypt_text()):
-                mylist.append('W4S')
-            if not obj.check_table(global_objs['Local_Settings'].grab_item('WE_TBL').decrypt_text()):
-                mylist.append('WE')
-
-            if len(mylist) > 0:
-                header_text = 'Welcome to Vacuum Settings!\n{0} settings are invalid.\nPlease fix the network settings below:' \
-                    .format(', '.join(mylist))
+                header_text = 'Welcome to Vacuum Settings!\nNetwork settings are invalid.\nPlease fix the network settings below:'
                 obj.build_gui(header_text)
-                del obj, mylist
-                return False
-            del mylist
-        except:
-            return False
+            else:
+                my_return = True
         finally:
             obj.sql_close()
+
     del obj
-    return True
+    return my_return
 
 
 if __name__ == '__main__':
     if check_settings():
-        try:
-            global_objs['SQL'].connect('alch')
-        finally:
-            global_objs['SQL'].close()
+        Preserve_Obj = ShelfHandle(os.path.join(PreserveDir, 'Data_Locker'))
+        trim_preserve()
+        has_updates = check_for_updates()
 
-    Preserve_Obj = ShelfHandle(os.path.join(PreserveDir, 'Data_Locker'))
-    trim_preserve()
-    has_updates = check_for_updates()
-
-    if has_updates:
-        global_objs['Event_Log'].write_log('Found {} files to process'.format(len(has_updates)))
-        process_updates(has_updates)
+        if has_updates:
+            global_objs['Event_Log'].write_log('Found {} files to process'.format(len(has_updates)))
+            process_updates(has_updates)
+        else:
+            global_objs['Event_Log'].write_log('Found no files to process', 'warning')
     else:
-        global_objs['Event_Log'].write_log('Found no files to process', 'warning')
+        global_objs['Event_Log'].write_log('Settings Mode was established. Need to re-run script', 'warning')
 
     os.system('pause')
