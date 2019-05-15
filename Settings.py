@@ -3,12 +3,18 @@ from tkinter import *
 from tkinter import messagebox
 from Global import grabobjs
 from Global import CryptHandle
+from Global import ShelfHandle
+
 import os
+import random
+import pandas as pd
 
 # Global Variable declaration
 curr_dir = os.path.dirname(os.path.abspath(__file__))
 main_dir = os.path.dirname(curr_dir)
 global_objs = grabobjs(main_dir)
+preserve_dir = os.path.join(main_dir, '04_Preserve')
+export_dir = os.path.join(preserve_dir, 'Data_Locker_Export')
 
 
 class SettingsGUI:
@@ -194,6 +200,8 @@ class SettingsGUI:
         else:
             return False
 
+    # Function to check shelf depository to see if sql_tbl exists in depository
+    #   This function will load settings if sql tbl exists in depository
     def check_shelf(self, event):
         if self.sql_tbl.get() in self.local_settings and self.sql_tbl.get() != 'General_Settings_Path':
             myitems = self.local_settings[self.sql_tbl.get()]
@@ -240,7 +248,11 @@ class SettingsGUI:
                     else:
                         myitems = [False, self.shelf_life.get()]
 
-                    self.add_setting('Local_Settings', myitems, self.sql_tbl.get(), False)
+                    if self.autofill.get() != 1 or self.shelf_life.get() != 14:
+                        self.add_setting('Local_Settings', myitems, self.sql_tbl.get(), False)
+                    else:
+                        global_objs['Local_Settings'].del_item(self.sql_tbl.get())
+
                     self.main.destroy()
 
     # Function to load extract Shelf GUI
@@ -257,15 +269,20 @@ class SettingsGUI:
 
 
 class ExtractShelf:
+    save_button = None
+    list_box = None
+    list_sel = 0
+
     # Function that is executed upon creation of ExtractShelf class
     def __init__(self, root):
+        self.shelf_obj = ShelfHandle(os.path.join(preserve_dir, 'Data_Locker'))
         self.main = Toplevel(root)
         self.header_text = 'Welcome to Shelf Date Extraction!\nPlease choose a date below.\nWhen finished press extract'
 
     # Function to build GUI for Extract Shelf
     def build_gui(self):
         # Set GUI Geometry and GUI Title
-        self.main.geometry('444x257+500+190')
+        self.main.geometry('252x280+500+190')
         self.main.title('Shelf Extractor')
         self.main.resizable(False, False)
 
@@ -282,6 +299,82 @@ class ExtractShelf:
         # Apply Header text to Header_Frame that describes purpose of GUI
         header = Message(self.main, text=self.header_text, width=375, justify=CENTER)
         header.pack(in_=header_frame)
+
+        # Apply Listbox with scrollbar to the Shelf_Frame
+        yscrollbar = Scrollbar(self.main, orient='vertical')
+        self.list_box = Listbox(self.main, selectmode=SINGLE, width=35, yscrollcommand=yscrollbar.set)
+        yscrollbar.config(command=self.list_box.yview)
+        self.list_box.pack(in_=shelf_frame, side=LEFT, padx=5, pady=5)
+        yscrollbar.pack(in_=shelf_frame, side=LEFT, fill=Y, pady=5)
+        self.list_box.bind("<Down>", self.on_list_down)
+        self.list_box.bind("<Up>", self.on_list_up)
+        self.list_box.bind('<<ListboxSelect>>', self.on_select)
+
+        # Apply Buttons to Button_Frame
+        #     Save Button
+        self.save_button = Button(self.main, text='Extract', width=12, command=self.extract_shelf)
+        self.save_button.pack(in_=button_frame, side=LEFT, padx=10, pady=5)
+
+        #     Cancel Button
+        extract_button = Button(self.main, text='Cancel', width=12, command=self.cancel)
+        extract_button.pack(in_=button_frame, side=RIGHT, padx=10, pady=5)
+
+    def load_gui(self):
+        for key in self.shelf_obj.get_keys():
+            self.list_box.insert('end', key)
+
+        if self.list_box.size() > 0:
+            self.list_box.select_set(0)
+        else:
+            self.save_button.configure(state=DISABLED)
+
+    # Function adjusts selection of item when user clicks item
+    def on_select(self, event):
+        if self.list_box and self.list_box.curselection() and -1 < self.list_sel < self.list_box.size() - 1:
+            self.list_sel = self.list_box.curselection()[0]
+
+    def on_list_down(self, event):
+        if self.list_sel < self.list_box.size() - 1:
+            self.list_box.select_clear(self.list_sel)
+            self.list_sel += 1
+            self.list_box.select_set(self.list_sel)
+
+    def on_list_up(self, event):
+        if self.list_sel > 0:
+            self.list_box.select_clear(self.list_sel)
+            self.list_sel -= 1
+            self.list_box.select_set(self.list_sel)
+
+    def extract_shelf(self):
+        if self.list_box.size() > 0:
+            if self.list_box.curselection():
+                mylist = []
+                selection = self.list_box.get(self.list_box.curselection())
+                myitems = self.shelf_obj.grab_item(selection)
+                filepath = os.path.join(export_dir, '{0}_{1}.xlsx'.format(
+                    selection, random.randint(10000000, 100000000)))
+
+                if not os.path.exists(export_dir):
+                    os.makedirs(export_dir)
+
+                num = 1
+
+                with pd.ExcelWriter(filepath) as writer:
+                    for item in myitems:
+                        mylist.append([item[0], item[1], item[2] + '_' + str(num), item[3], item[5]])
+                        pd.DataFrame([item[3]]).to_excel(writer, index=False, header=False,
+                                                         sheet_name=item[2] + '_' + str(num))
+                        item[4].to_excel(writer, index=False, startrow=1, sheet_name=item[2] + '_' + str(num))
+
+                        num += 1
+
+                    df = pd.DataFrame(mylist, columns=['Orig_File_Name', 'File_Authors', 'Tab_Name', 'SQL_Table',
+                                                       'Append_Time'])
+                    df.to_excel(writer, index=False, sheet_name='TAB_Details')
+
+                self.main.destroy()
+            else:
+                messagebox.showerror('Selection Error!', 'No shelf date was selected. Please select a valid shelf item')
 
     # Function to destroy GUI when Cancel button is pressed
     def cancel(self):
