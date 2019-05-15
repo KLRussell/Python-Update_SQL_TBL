@@ -89,17 +89,13 @@ class CryptHandle:
         self.key = base64.urlsafe_b64encode(kdf.derive(etext))
 
     @staticmethod
-    def code_method(obj, encode=True):
+    def code_method(obj):
         if isinstance(obj, int):
-            if encode:
-                return obj.to_bytes(4, byteorder='big', signed=True)
-            else:
-                return int.from_bytes(obj, byteorder='big')
+            return obj.to_bytes(4, byteorder='big', signed=True)
         elif isinstance(obj, str):
-            if encode:
-                return obj.encode()
-            else:
-                return obj.decode()
+            return obj.encode()
+        else:
+            return obj.decode()
 
     def encrypt_text(self, item):
         if isinstance(item, int) or isinstance(item, str):
@@ -114,7 +110,7 @@ class CryptHandle:
     def decrypt_text(self):
         if self.key and self.encrypted_text:
             crypt_obj = Fernet(self.key)
-            return self.code_method(crypt_obj.decrypt(self.encrypted_text), False)
+            return self.code_method(crypt_obj.decrypt(self.encrypted_text))
 
     def grab_items(self):
         return [self.key, self.encrypted_text]
