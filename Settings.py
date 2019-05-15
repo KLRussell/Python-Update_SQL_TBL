@@ -12,6 +12,8 @@ global_objs = grabobjs(main_dir)
 
 
 class SettingsGUI:
+    shelf_obj = None
+
     # Function that is executed upon creation of SettingsGUI class
     def __init__(self):
         self.header_text = 'Welcome to TSQL Table Settings!\nSettings can be changed below.\nPress save when finished'
@@ -155,7 +157,43 @@ class SettingsGUI:
 
     # Function to load extract Shelf GUI
     def extract_shelf(self):
-        print('extracting shelf')
+        if self.shelf_obj:
+            self.shelf_obj.cancel()
+
+        self.shelf_obj = ExtractShelf(self.main)
+        self.shelf_obj.build_gui()
+
+    # Function to destroy GUI when Cancel button is pressed
+    def cancel(self):
+        self.main.destroy()
+
+
+class ExtractShelf:
+    # Function that is executed upon creation of ExtractShelf class
+    def __init__(self, root):
+        self.main = Toplevel(root)
+        self.header_text = 'Welcome to Shelf Date Extraction!\nPlease choose a date below.\nWhen finished press extract'
+
+    # Function to build GUI for Extract Shelf
+    def build_gui(self):
+        # Set GUI Geometry and GUI Title
+        self.main.geometry('444x257+500+190')
+        self.main.title('Shelf Extractor')
+        self.main.resizable(False, False)
+
+        # Set GUI Frames
+        header_frame = Frame(self.main)
+        shelf_frame = LabelFrame(self.main, text='Shelf Locker', width=444, height=140)
+        button_frame = Frame(self.main)
+
+        # Apply Frames into GUI
+        header_frame.pack()
+        shelf_frame.pack(fill="both")
+        button_frame.pack(fill="both")
+
+        # Apply Header text to Header_Frame that describes purpose of GUI
+        header = Message(self.main, text=self.header_text, width=375, justify=CENTER)
+        header.pack(in_=header_frame)
 
     # Function to destroy GUI when Cancel button is pressed
     def cancel(self):
