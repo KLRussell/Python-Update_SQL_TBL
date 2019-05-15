@@ -392,6 +392,8 @@ class SQLHandle:
         self.conn_type = conn_type
 
         if self.test_conn():
+            self.close()
+
             try:
                 if self.conn_type == 'alch':
                     self.engine = mysql.create_engine(self.conn_str)
@@ -423,10 +425,14 @@ class SQLHandle:
 
     def close(self):
         if self.conn_type == 'alch':
-            self.engine.dispose()
+            if self.engine:
+                self.engine.dispose()
         else:
-            self.cursor.close()
-            self.conn.close()
+            if self.cursor:
+                self.cursor.close()
+
+            if self.conn:
+                self.conn.close()
 
     def createsession(self):
         if self.conn_type == 'alch':
