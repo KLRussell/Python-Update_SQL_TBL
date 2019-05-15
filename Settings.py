@@ -319,6 +319,8 @@ class ExtractShelf:
         extract_button = Button(self.main, text='Cancel', width=12, command=self.cancel)
         extract_button.pack(in_=button_frame, side=RIGHT, padx=10, pady=5)
 
+        self.load_gui()
+
     def load_gui(self):
         for key in self.shelf_obj.get_keys():
             self.list_box.insert('end', key)
