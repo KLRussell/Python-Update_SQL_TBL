@@ -50,7 +50,7 @@ class SettingsGUI:
             self.header_text = header
 
         # Set GUI Geometry and GUI Title
-        self.main.geometry('444x260+500+190')
+        self.main.geometry('444x257+500+190')
         self.main.title('TSQL Table Settings')
         self.main.resizable(False, False)
 
@@ -58,11 +58,13 @@ class SettingsGUI:
         header_frame = Frame(self.main)
         network_frame = LabelFrame(self.main, text='Network Settings', width=444, height=70)
         shelf_frame = LabelFrame(self.main, text='Shelf Life Settings', width=444, height=140)
+        button_frame = Frame(self.main)
 
         # Apply Frames into GUI
         header_frame.pack()
         network_frame.pack(fill="both")
         shelf_frame.pack(fill="both")
+        button_frame.pack(fill="both")
 
         # Apply Header text to Header_Frame that describes purpose of GUI
         header = Message(self.main, text=self.header_text, width=375, justify=CENTER)
@@ -99,6 +101,19 @@ class SettingsGUI:
         sql_tbl_txtbox = Entry(shelf_frame, textvariable=self.shelf_life, width=57)
         sql_tbl_label.grid(row=2, column=0, padx=8, pady=5, sticky=E)
         sql_tbl_txtbox.grid(row=2, column=1, columnspan=3, padx=5, pady=5, sticky=W)
+
+        # Apply Buttons to Button_Frame
+        #     Save Button
+        save_button = Button(self.main, text='Save Settings', width=15, command=self.save_settings)
+        save_button.pack(in_=button_frame, side=LEFT, padx=10, pady=5)
+
+        #     Cancel Button
+        extract_button = Button(self.main, text='Cancel', width=15, command=self.cancel)
+        extract_button.pack(in_=button_frame, side=RIGHT, padx=10, pady=5)
+
+        #     Extract Shelf Button
+        extract_button = Button(self.main, text='Extract Shelf', width=15, command=self.extract_shelf)
+        extract_button.pack(in_=button_frame, side=TOP, padx=10, pady=5)
 
         # Fill Textboxes with settings
         self.fill_gui()
@@ -137,6 +152,10 @@ class SettingsGUI:
             if self.asql.test_conn('alch'):
                 self.add_setting('Settings', self.server.get(), 'Server')
                 self.add_setting('Settings', self.database.get(), 'Database')
+
+    # Function to load extract Shelf GUI
+    def extract_shelf(self):
+        print('extracting shelf')
 
     # Function to destroy GUI when Cancel button is pressed
     def cancel(self):
