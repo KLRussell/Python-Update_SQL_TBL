@@ -391,4 +391,3 @@ if __name__ == '__main__':
         obj.build_gui()
     finally:
         obj.sql_close()
-
