@@ -162,7 +162,7 @@ class SettingsGUI:
             self.asql.connect('alch')
 
     # Function to check network settings if populated
-    def check_network(self):
+    def check_network(self, event):
         if self.server.get() and self.database.get() and \
                 (global_objs['Settings'].grab_item('Server') != self.server.get() or
                  global_objs['Settings'].grab_item('Database') != self.database.get()):
