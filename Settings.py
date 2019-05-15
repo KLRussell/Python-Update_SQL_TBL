@@ -386,5 +386,9 @@ class ExtractShelf:
 # Main loop routine to create GUI Settings
 if __name__ == '__main__':
     obj = SettingsGUI()
-    obj.build_gui()
+
+    try:
+        obj.build_gui()
+    finally:
+        obj.sql_close()
 
