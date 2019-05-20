@@ -12,7 +12,7 @@ import pandas as pd
 # Global Variable declaration
 curr_dir = os.path.dirname(os.path.abspath(__file__))
 main_dir = os.path.dirname(curr_dir)
-global_objs = grabobjs(main_dir)
+global_objs = grabobjs(main_dir, 'TSQL')
 preserve_dir = os.path.join(main_dir, '04_Preserve')
 export_dir = os.path.join(preserve_dir, 'Data_Locker_Export')
 
@@ -59,10 +59,12 @@ class SettingsGUI:
     # static function to add setting to Local_Settings shelf files
     @staticmethod
     def add_setting(setting_list, val, key, encrypt=True):
-        assert (key and val and setting_list)
+        assert (key and setting_list)
 
         global_objs[setting_list].del_item(key)
-        global_objs[setting_list].add_item(key=key, val=val, encrypt=encrypt)
+
+        if val:
+            global_objs[setting_list].add_item(key=key, val=val, encrypt=encrypt)
 
     # Function to build GUI for settings
     def build_gui(self, header=None):

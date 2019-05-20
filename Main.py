@@ -17,7 +17,7 @@ main_dir = os.path.dirname(curr_dir)
 ProcDir = os.path.join(main_dir, '02_To_Process')
 ErrDir = os.path.join(main_dir, '03_Errors')
 PreserveDir = os.path.join(main_dir, '04_Preserve')
-global_objs = grabobjs(main_dir)
+global_objs = grabobjs(main_dir, 'TSQL')
 Preserve_Obj = None
 
 FORMATS = {
