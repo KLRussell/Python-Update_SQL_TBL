@@ -739,7 +739,9 @@ def check_settings():
         finally:
             obj.sql_close()
 
+    obj.cancel()
     del obj
+
     return my_return
 
 
