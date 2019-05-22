@@ -99,7 +99,7 @@ class SettingsGUI:
         server_txtbox = Entry(self.main, textvariable=self.server)
         server_label.pack(in_=network_frame, side=LEFT)
         server_txtbox.pack(in_=network_frame, side=LEFT)
-        server_txtbox.bind('<KeyRelease>', self.check_network)
+        server_txtbox.bind('<FocusOut>', self.check_network)
 
         #     Server Database Input Box
         database_label = Label(self.main, text='Database:')
@@ -134,8 +134,8 @@ class SettingsGUI:
         self.save_button.pack(in_=button_frame, side=LEFT, padx=10, pady=5)
 
         #     Cancel Button
-        extract_button = Button(self.main, text='Cancel', width=15, command=self.cancel)
-        extract_button.pack(in_=button_frame, side=RIGHT, padx=10, pady=5)
+        cancel_button = Button(self.main, text='Cancel', width=15, command=self.cancel)
+        cancel_button.pack(in_=button_frame, side=RIGHT, padx=10, pady=5)
 
         #     Extract Shelf Button
         extract_button = Button(self.main, text='Extract Shelf', width=15, command=self.extract_shelf)
@@ -179,6 +179,18 @@ class SettingsGUI:
                 self.add_setting('Settings', self.server.get(), 'Server')
                 self.add_setting('Settings', self.database.get(), 'Database')
                 self.asql.connect('alch')
+            else:
+                self.sql_tbl_txtbox.configure(state=DISABLED)
+                self.save_button.configure(state=DISABLED)
+                self.shelf_file_txtbox.configure(state=DISABLED)
+                self.autofill_radio1.configure(state=DISABLED)
+                self.autofill_radio2.configure(state=DISABLED)
+        else:
+            self.sql_tbl_txtbox.configure(state=DISABLED)
+            self.save_button.configure(state=DISABLED)
+            self.shelf_file_txtbox.configure(state=DISABLED)
+            self.autofill_radio1.configure(state=DISABLED)
+            self.autofill_radio2.configure(state=DISABLED)
 
     # Function to validate whether a SQL table exists in SQL server
     def check_table(self, table):
