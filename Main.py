@@ -131,10 +131,10 @@ class ExcelToSQL:
                         cleaned_df = pd.DataFrame()
                         cleaned_df[col] = data[col].map(
                             lambda x: None if len(str(x)) > int(row['Character_Maximum_Length'][0]) else True)
-                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index(drop=True)
+                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index]
 
                         if not myerr.empty:
-                            mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr),
+                            mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr.reset_index(drop=True)),
                                       'Column {0} has {1} items that exceeds the limit percision for data type {2}'
                                           .format(col, len(myerr), row['Data_Type'][0])]
                             self.errors_obj.append_errors(mylist)
@@ -145,10 +145,10 @@ class ExcelToSQL:
                     elif row['Data_Type'][0] in ['varbinary', 'binary', 'bit', 'int', 'tinyint', 'smallint', 'bigint']:
                         cleaned_df = pd.DataFrame()
                         cleaned_df[col] = data[col].map(lambda x: True if is_number(str(x)) else None)
-                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index(drop=True)
+                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index]
 
                         if not myerr.empty:
-                            mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr),
+                            mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr.reset_index(drop=True)),
                                       'Column {0} has {1} items that is not numeric for data type {2}'
                                           .format(col, len(myerr), row['Data_Type'][0])]
                             self.errors_obj.append_errors(mylist)
@@ -159,10 +159,10 @@ class ExcelToSQL:
 
                         cleaned_df = pd.DataFrame()
                         cleaned_df[col] = data[col].map(lambda x: True if is_digit(str(x)) else None)
-                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index(drop=True)
+                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index]
 
                         if not myerr.empty:
-                            mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr),
+                            mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr.reset_index(drop=True)),
                                       'Column {0} has {1} items that has digits for data type {2}'
                                           .format(col, len(myerr), row['Data_Type'][0])]
                             self.errors_obj.append_errors(mylist)
@@ -196,10 +196,10 @@ class ExcelToSQL:
                         cleaned_df = pd.DataFrame()
                         cleaned_df[col] = data[col].map(
                             lambda x: None if x < minnum else True)
-                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index(drop=True)
+                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index]
 
                         if not myerr.empty:
-                            mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr),
+                            mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr.reset_index(drop=True)),
                                       'Column {0} has {1} items that exceeds the minumum number size for data type {2}'
                                           .format(col, len(myerr), row['Data_Type'][0])]
                             self.errors_obj.append_errors(mylist)
@@ -211,10 +211,10 @@ class ExcelToSQL:
                         cleaned_df = pd.DataFrame()
                         cleaned_df[col] = data[col].map(
                             lambda x: None if x > maxnum else True)
-                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index(drop=True)
+                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index]
 
                         if not myerr.empty:
-                            mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr),
+                            mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr.reset_index(drop=True)),
                                       'Column {0} has {1} items that exceeds the maximum number size for data type {2}'
                                           .format(col, len(myerr), row['Data_Type'][0])]
                             self.errors_obj.append_errors(mylist)
@@ -226,10 +226,10 @@ class ExcelToSQL:
                         cleaned_df = pd.DataFrame()
                         cleaned_df[col] = data[col].map(
                             lambda x: None if len(str(x)) > row['Character_Maximum_Length'][0] else True)
-                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index(drop=True)
+                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index]
 
                         if not myerr.empty:
-                            mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr),
+                            mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr.reset_index(drop=True)),
                                       'Column {0} has {1} items that exceeds the precision size for data type {2}'
                                           .format(col, len(myerr), row['Data_Type'][0])]
                             self.errors_obj.append_errors(mylist)
@@ -242,10 +242,10 @@ class ExcelToSQL:
                         cleaned_df['Date'] = data[col]
                         cleaned_df['Date'].loc[cleaned_df['Date'].isnull()] = datetime.datetime.now()
                         cleaned_df['Date'] = pd.to_datetime(cleaned_df['Date'], errors='coerce')
-                        myerr = data.loc[cleaned_df.loc[cleaned_df['Date'].isnull()].index].reset_index(drop=True)
+                        myerr = data.loc[cleaned_df.loc[cleaned_df['Date'].isnull()].index]
 
                         if not myerr.empty:
-                            mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr),
+                            mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr.reset_index(drop=True)),
                                       'Column {0} has {1} items that isn''t in date/time format for data type {2}'
                                           .format(col, len(myerr), row['Data_Type'][0])]
                             self.errors_obj.append_errors(mylist)
@@ -256,10 +256,10 @@ class ExcelToSQL:
                     elif row['Data_Type'][0] in ['money', 'smallmoney', 'numeric', 'decimal', 'float', 'real']:
                         cleaned_df = pd.DataFrame()
                         cleaned_df[col] = data[col].map(lambda x: True if is_number(str(x)) else None)
-                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index(drop=True)
+                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index]
 
                         if not myerr.empty:
-                            mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr),
+                            mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr.reset_index(drop=True)),
                                       'Column {0} has {1} items that is not numeric for data type {2}'
                                           .format(col, len(myerr), row['Data_Type'][0])]
                             self.errors_obj.append_errors(mylist)
@@ -282,10 +282,10 @@ class ExcelToSQL:
                             cleaned_df = pd.DataFrame()
                             cleaned_df[col] = data[col].map(
                                 lambda x: None if x < minnum else True)
-                            myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index(drop=True)
+                            myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index]
 
                             if not myerr.empty:
-                                mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr),
+                                mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr.reset_index(drop=True)),
                                           'Column {0} has {1} items that exceeds the minumum number size for data type {2}'
                                               .format(col, len(myerr), row['Data_Type'][0])]
                                 self.errors_obj.append_errors(mylist)
@@ -297,10 +297,10 @@ class ExcelToSQL:
                             cleaned_df = pd.DataFrame()
                             cleaned_df[col] = data[col].map(
                                 lambda x: None if x > maxnum else True)
-                            myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index(drop=True)
+                            myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index]
 
                             if not myerr.empty:
-                                mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr),
+                                mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr.reset_index(drop=True)),
                                           'Column {0} has {1} items that exceeds the maximum number size for data type {2}'
                                               .format(col, len(myerr), row['Data_Type'][0])]
                                 self.errors_obj.append_errors(mylist)
@@ -314,10 +314,10 @@ class ExcelToSQL:
                             lambda x: None if ('.' in str(x) and len(str(x).split('.')[0]) >
                                                row['Numeric_Precision'][0]) or ('.' not in str(x) and len(str(x)) >
                                                                                 row['Numeric_Precision'][0]) else True)
-                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index(drop=True)
+                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index]
 
                         if not myerr.empty:
-                            mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr),
+                            mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr.reset_index(drop=True)),
                                       'Column {0} has {1} items that exceeds the numeric precision for data type {2}'
                                           .format(col, len(myerr), row['Data_Type'][0])]
                             self.errors_obj.append_errors(mylist)
@@ -330,10 +330,10 @@ class ExcelToSQL:
                         cleaned_df[col] = data[col].map(
                             lambda x: None if ('.' in str(x) and len(str(x).split('.')[1]) >
                                                row['Numeric_Scale'][0]) or '.' not in str(x) else True)
-                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index].reset_index(drop=True)
+                        myerr = data.loc[cleaned_df[cleaned_df[col].isnull()].index]
 
                         if not myerr.empty:
-                            mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr),
+                            mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr.reset_index(drop=True)),
                                       'Column {0} has {1} items that exceeds the numeric scale for data type {2}'
                                           .format(col, len(myerr), row['Data_Type'][0])]
                             self.errors_obj.append_errors(mylist)
@@ -343,10 +343,10 @@ class ExcelToSQL:
                             return False
 
                     if row['Is_Nullable'][0] == 'NO':
-                        myerr = data.loc[data[col].isnull()].reset_index(drop=True)
+                        myerr = data.loc[data[col].isnull()]
 
                         if not myerr.empty:
-                            mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr),
+                            mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr.reset_index(drop=True)),
                                       'Column {0} has {1} items that are null for data type {2} when null is not allowed'
                                           .format(col, len(myerr), row['Data_Type'][0])]
                             self.errors_obj.append_errors(mylist)
@@ -433,7 +433,7 @@ class ExcelToSQL:
                 myerr = data[data[self.primary_key].isnull()]
 
                 if not myerr.empty:
-                    mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr),
+                    mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr.reset_index(drop=True)),
                               'Primary Key {0} has {1} items that are null ids when null is not allowed'
                                   .format(self.primary_key, len(myerr))]
                     self.errors_obj.append_errors(mylist)
@@ -489,7 +489,7 @@ class ExcelToSQL:
                 myerr = data[data[self.primary_key].isin(results[self.primary_key])]
 
                 if not myerr.empty:
-                    mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr),
+                    mylist = [copy.copy(tab), copy.copy(table), copy.copy(myerr.reset_index(drop=True)),
                               'Column {0} has {1} items that do not exist in table {2}'
                                   .format(self.primary_key, len(myerr), table)]
                     self.errors_obj.append_errors(mylist)
