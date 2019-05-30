@@ -654,7 +654,7 @@ def process_updates(files):
                     else:
                         global_objs['Event_Log'].write_log('Updating {0} items in {1}'.format(len(df), table))
 
-                    # myobj.update_tbl(file, tab, table, df)
+                    myobj.update_tbl(file, tab, table, df)
 
                 myobj.process_errs(file)
             os.remove(file)
