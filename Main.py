@@ -333,11 +333,6 @@ class ExcelToSQL:
                                 return False
 
                         if not np.isnan(row['Numeric_Scale'][0]):
-                            if col == 'Total_Amount':
-                                cdf = pd.DataFrame()
-                                cdf[col] = data[col].map(lambda x: '{0} - {1}: {2} > {3}'.format(x, str(x).split('.')[1], len(str(x).split('.')[1]), int(row['Numeric_Scale'][0])) if not np.isnan(x) and '.' in str(x) and len(str(x).split('.')[1]) > int(row['Numeric_Scale'][0]) else None)
-                                print(cdf[cdf[col].notnull()])
-
                             cleaned_df = pd.DataFrame()
                             cleaned_df[col] = data[col].map(
                                 lambda x: None if not np.isnan(x) and '.' in str(x) and len(str(x).split('.')[1]) > int(
