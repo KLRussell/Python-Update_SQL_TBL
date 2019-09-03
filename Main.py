@@ -7,13 +7,19 @@ from win32com import storagecon
 import pandas as pd
 import pathlib as pl
 import numpy as np
+import sys
 import os
 import copy
 import datetime
 import random
 import pythoncom
 
-curr_dir = os.path.dirname(os.path.abspath(__file__))
+if getattr(sys, 'frozen', False):
+    application_path = sys.executable
+else:
+    application_path = __file__
+
+curr_dir = os.path.dirname(os.path.abspath(application_path))
 main_dir = os.path.dirname(curr_dir)
 ProcDir = os.path.join(main_dir, '02_To_Process')
 ErrDir = os.path.join(main_dir, '03_Errors')
