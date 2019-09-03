@@ -7,10 +7,16 @@ from Global import ShelfHandle
 
 import os
 import random
+import sys
 import pandas as pd
 
+if getattr(sys, 'frozen', False):
+    application_path = sys.executable
+else:
+    application_path = __file__
+
 # Global Variable declaration
-curr_dir = os.path.dirname(os.path.abspath(__file__))
+curr_dir = os.path.dirname(os.path.abspath(application_path))
 main_dir = os.path.dirname(curr_dir)
 global_objs = grabobjs(main_dir, 'TSQL')
 preserve_dir = os.path.join(main_dir, '04_Preserve')
