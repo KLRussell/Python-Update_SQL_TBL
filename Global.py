@@ -596,6 +596,9 @@ class ErrHandle:
             else:
                 self.errors['default'] = [err_items]
 
+    def grab_keys(self):
+        return self.errors.keys()
+
     def grab_errors(self, key=None):
         if key and key in self.errors.keys():
             mylist = self.errors[key]
