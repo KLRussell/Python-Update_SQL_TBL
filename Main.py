@@ -482,11 +482,13 @@ class ExcelToSQL:
                 (
                     {1}
                 )
+                
                 select
                     {1}
                 
                 from UT_TMP
             '''.format(table, self.format_sql_set(data.columns.tolist())))
+            self.shelf_old(file, table, data)
         else:
             results = self.asql.query('''
                 select
