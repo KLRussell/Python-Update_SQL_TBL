@@ -12,8 +12,10 @@ import pandas as pd
 
 if getattr(sys, 'frozen', False):
     application_path = sys.executable
+    ico_dir = sys._MEIPASS
 else:
     application_path = __file__
+    ico_dir = os.path.dirname(__file__)
 
 # Global Variable declaration
 curr_dir = os.path.dirname(os.path.abspath(application_path))
@@ -21,6 +23,7 @@ main_dir = os.path.dirname(curr_dir)
 global_objs = grabobjs(main_dir, 'TSQL')
 preserve_dir = os.path.join(main_dir, '04_Preserve')
 export_dir = os.path.join(preserve_dir, 'Data_Locker_Export')
+icon_path = os.path.join(ico_dir, '%s.ico' % os.path.splitext(os.path.basename(application_path))[0])
 
 
 class SettingsGUI:
@@ -38,6 +41,7 @@ class SettingsGUI:
         self.asql = global_objs['SQL']
         self.local_settings = global_objs['Local_Settings'].grab_list()
         self.main = Tk()
+        self.main.iconbitmap(icon_path)
 
         # GUI Variables
         self.server = StringVar()
@@ -71,6 +75,8 @@ class SettingsGUI:
 
         if val:
             global_objs[setting_list].add_item(key=key, val=val, encrypt=encrypt)
+
+        global_objs[setting_list].write_shelf()
 
     # Function to build GUI for settings
     def build_gui(self, header=None):
@@ -296,7 +302,9 @@ class ExtractShelf:
     # Function that is executed upon creation of ExtractShelf class
     def __init__(self, root):
         self.shelf_obj = ShelfHandle(os.path.join(preserve_dir, 'Data_Locker'))
+        self.shelf_obj.read_shelf()
         self.main = Toplevel(root)
+        self.main.iconbitmap(icon_path)
         self.header_text = 'Welcome to Shelf Date Extraction!\nPlease choose a date below.\nWhen finished press extract'
 
     # Function to build GUI for Extract Shelf

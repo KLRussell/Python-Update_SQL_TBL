@@ -1,6 +1,6 @@
 from Global import grabobjs
 from Global import ShelfHandle
-from Settings import SettingsGUI
+from TSQL_TBL_Tool_Settings import SettingsGUI
 from win32com.shell import shell
 from win32com import storagecon
 
@@ -575,6 +575,8 @@ class ExcelToSQL:
                            datetime.datetime.now()]]
                 Preserve_Obj.add_item(today, mylist)
 
+            Preserve_Obj.write_shelf()
+
     def process_errs(self, file):
         mykeys = list()
 
@@ -643,6 +645,8 @@ def trim_preserve():
 
     if mylocker:
         Preserve_Obj.add_list(mylocker)
+
+    Preserve_Obj.write_shelf()
 
 
 def check_for_updates():
@@ -777,6 +781,7 @@ def check_settings():
 if __name__ == '__main__':
     if check_settings():
         Preserve_Obj = ShelfHandle(os.path.join(PreserveDir, 'Data_Locker'))
+        Preserve_Obj.read_shelf()
         trim_preserve()
         has_updates = check_for_updates()
 
