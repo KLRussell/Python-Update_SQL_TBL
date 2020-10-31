@@ -13,6 +13,9 @@ import copy
 import datetime
 import random
 import pythoncom
+import Global
+import xlrd
+import win32timezone
 
 if getattr(sys, 'frozen', False):
     application_path = sys.executable
